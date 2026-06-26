@@ -1,8 +1,13 @@
-Хорошо! Убираю мини-карту полностью. Вот исправленный файл:
+Отлично! Давайте доработаем подземелья по вашему запросу. Вот что я изменю:
+
+1. Увеличение размера локаций — карта станет больше
+2. Монстры выходят за пределы комнат — теперь они могут бродить по коридорам
+3. Два портала — входной (он же выход наверх) и второй портал (спуск вниз)
+4. Квесты обновляются — после выполнения всех появляются новые, более сложные, в зависимости от глубины
 
 ---
 
-📁 tg-rpg-v3.2.html — Без мини-карты
+📁 tg-rpg-v3.3.html — Обновлённая версия
 
 ```html
 <!DOCTYPE html>
@@ -11,7 +16,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>⚔️ TG-RPG v3.2</title>
+<title>⚔️ TG-RPG v3.3</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;background:#0a0a0f;overflow:hidden;touch-action:none;font-family:sans-serif}
@@ -30,9 +35,10 @@ canvas{display:block;position:fixed;top:0;left:0}
 #s-loc{color:#00b4a0;font-size:10px}
 #s-depth{color:#ff8844;font-size:10px;font-weight:bold}
 #s-save{color:#888;font-size:9px}
+#s-quests{color:#88ff88;font-size:9px;cursor:pointer;pointer-events:all}
 
 /* Трекер квеста */
-#quest-tracker{position:fixed;top:58px;right:8px;background:rgba(0,0,0,.85);border:1px solid #44aa44;border-radius:8px;padding:5px 10px;z-index:55;font-size:10px;color:#88ff88;display:none;max-width:180px;text-align:right;pointer-events:none}
+#quest-tracker{position:fixed;top:58px;right:8px;background:rgba(0,0,0,.85);border:1px solid #44aa44;border-radius:8px;padding:5px 10px;z-index:55;font-size:10px;color:#88ff88;display:none;max-width:200px;text-align:right;pointer-events:none}
 #qt-name{font-weight:bold;color:#aaffaa}
 #qt-progress{color:#88dd88}
 
@@ -118,6 +124,7 @@ canvas{display:block;position:fixed;top:0;left:0}
   <div class="hb">
     <div class="st" id="s-loc">📍 Мир</div>
     <div class="st" id="s-depth">⚔ 0</div>
+    <div class="st" id="s-quests" onclick="openQuests()">📋</div>
     <div class="st" id="s-save"></div>
   </div>
 </div>
@@ -169,19 +176,20 @@ canvas{display:block;position:fixed;top:0;left:0}
 // ═══════════════════════════════════════════════════════════════
 //  ВЕРСИЯ
 // ═══════════════════════════════════════════════════════════════
-const VERSION = '3.2.0';
+const VERSION = '3.3.0';
 const CHANGELOG = [
-  'v3.2.0 — Удалена мини-карта (по запросу)',
-  'v3.2.0 — Оптимизирован код',
-  'v3.2.0 — Исправлены мелкие баги'
+  'v3.3.0 — Увеличен размер подземелий (40x32)',
+  'v3.3.0 — Монстры выходят за пределы комнат',
+  'v3.3.0 — Два портала: вход/выход наверх и спуск вниз',
+  'v3.3.0 — Квесты обновляются на более сложные с глубиной'
 ];
 
 // ═══════════════════════════════════════════════════════════════
 //  КОНФИГУРАЦИЯ
 // ═══════════════════════════════════════════════════════════════
 const TILE = 48;
-const COLS = 25;
-const ROWS = 20;
+const COLS = 40;  // Увеличено
+const ROWS = 32;  // Увеличено
 const MAP_W = COLS * TILE;
 const MAP_H = ROWS * TILE;
 
@@ -254,7 +262,7 @@ function wx(wx2, cx) { return (wx2 - cx) * SC + SW/2; }
 function wy(wy2, cy) { return (wy2 - cy) * SC + TOP + (SH - TOP - BOT)/2; }
 
 // ═══════════════════════════════════════════════════════════════
-//  ГЕНЕРАЦИЯ ПОДЗЕМЕЛИЙ
+//  ГЕНЕРАЦИЯ ПОДЗЕМЕЛИЙ (УВЕЛИЧЕННАЯ)
 // ═══════════════════════════════════════════════════════════════
 function generateDungeon(depth) {
   const grid = [];
@@ -262,14 +270,14 @@ function generateDungeon(depth) {
     grid[y] = new Array(COLS).fill(T_DW);
   }
   
-  // Генерация комнат
-  const numRooms = Math.min(4 + Math.floor(depth / 4), 12);
+  // Генерация комнат (больше комнат)
+  const numRooms = Math.min(8 + Math.floor(depth / 3), 20);
   const rooms = [];
   const attempts = numRooms * 30;
   
   for (let i = 0; i < attempts && rooms.length < numRooms; i++) {
-    const w = 3 + Math.floor(Math.random() * 4);
-    const h = 3 + Math.floor(Math.random() * 4);
+    const w = 4 + Math.floor(Math.random() * 5);
+    const h = 4 + Math.floor(Math.random() * 5);
     const x = 1 + Math.floor(Math.random() * (COLS - w - 2));
     const y = 1 + Math.floor(Math.random() * (ROWS - h - 2));
     
@@ -293,7 +301,6 @@ function generateDungeon(depth) {
   }
   
   if (rooms.length < 2) {
-    // Фолбэк: минимальное подземелье
     for (let y = 2; y < ROWS - 2; y++) {
       for (let x = 2; x < COLS - 2; x++) {
         grid[y][x] = T_DF;
@@ -311,36 +318,41 @@ function generateDungeon(depth) {
     const bx = b.x + Math.floor(b.w / 2);
     const by = b.y + Math.floor(b.h / 2);
     
+    // Широкие коридоры (2 клетки) для свободного перемещения
     if (Math.random() < 0.5) {
       for (let x = Math.min(ax, bx); x <= Math.max(ax, bx); x++) {
         if (ay >= 0 && ay < ROWS && x >= 0 && x < COLS) grid[ay][x] = T_DF;
+        if (ay+1 >= 0 && ay+1 < ROWS && x >= 0 && x < COLS) grid[ay+1][x] = T_DF;
       }
       for (let y = Math.min(ay, by); y <= Math.max(ay, by); y++) {
         if (y >= 0 && y < ROWS && bx >= 0 && bx < COLS) grid[y][bx] = T_DF;
+        if (y >= 0 && y < ROWS && bx+1 >= 0 && bx+1 < COLS) grid[y][bx+1] = T_DF;
       }
     } else {
       for (let y = Math.min(ay, by); y <= Math.max(ay, by); y++) {
         if (y >= 0 && y < ROWS && ax >= 0 && ax < COLS) grid[y][ax] = T_DF;
+        if (y >= 0 && y < ROWS && ax+1 >= 0 && ax+1 < COLS) grid[y][ax+1] = T_DF;
       }
       for (let x = Math.min(ax, bx); x <= Math.max(ax, bx); x++) {
         if (by >= 0 && by < ROWS && x >= 0 && x < COLS) grid[by][x] = T_DF;
+        if (by+1 >= 0 && by+1 < ROWS && x >= 0 && x < COLS) grid[by+1][x] = T_DF;
       }
     }
   }
   
-  // Портал входа (в первой комнате)
+  // Порталы: входной (он же выход наверх) - в первой комнате
   const firstRoom = rooms[0];
   const startX = firstRoom.x + Math.floor(firstRoom.w / 2);
   const startY = firstRoom.y + Math.floor(firstRoom.h / 2);
-  grid[startY][startX] = T_ENTRANCE;
+  grid[startY][startX] = T_ENTRANCE; // Вход/выход наверх
   
-  // Портал выхода (в последней комнате)
+  // Портал спуска вниз - в последней комнате
   const lastRoom = rooms[rooms.length - 1];
-  const exitX = lastRoom.x + Math.floor(lastRoom.w / 2);
-  const exitY = lastRoom.y + Math.floor(lastRoom.h / 2);
-  grid[exitY][exitX] = T_EXIT;
+  const downX = lastRoom.x + Math.floor(lastRoom.w / 2);
+  const downY = lastRoom.y + Math.floor(lastRoom.h / 2);
+  grid[downY][downX] = T_EXIT; // Спуск вниз
   
-  // Спавн врагов
+  // Спавн врагов (по всей карте, не только в комнатах)
   const enemies = [];
   const enemyTypes = [
     { name: 'Гоблин', hp: 40, atk: 8, exp: 20, color: '#50a03c' },
@@ -351,158 +363,150 @@ function generateDungeon(depth) {
   ];
   
   const mult = 1 + depth * 0.12;
-  const numEnemies = Math.min(5 + Math.floor(depth * 0.6), 15);
+  const numEnemies = Math.min(10 + Math.floor(depth * 0.8), 25);
   const isBossLevel = depth % 5 === 0 && depth > 0;
   
-  const spawnRooms = rooms.slice(1, rooms.length - 1);
-  if (spawnRooms.length === 0) {
-    spawnRooms.push(...rooms.slice(1));
+  // Собираем все доступные клетки для спавна (пол + коридоры)
+  const spawnCells = [];
+  for (let y = 1; y < ROWS - 1; y++) {
+    for (let x = 1; x < COLS - 1; x++) {
+      if (grid[y][x] === T_DF) {
+        spawnCells.push({ x, y });
+      }
+    }
   }
   
-  for (let i = 0; i < numEnemies + (isBossLevel ? 1 : 0); i++) {
-    const room = spawnRooms[Math.floor(Math.random() * spawnRooms.length)];
-    let placed = false;
+  // Перемешиваем клетки
+  for (let i = spawnCells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [spawnCells[i], spawnCells[j]] = [spawnCells[j], spawnCells[i]];
+  }
+  
+  const maxEnemies = Math.min(numEnemies + (isBossLevel ? 1 : 0), spawnCells.length);
+  for (let i = 0; i < maxEnemies; i++) {
+    const cell = spawnCells[i];
+    if (!cell) break;
     
-    for (let a = 0; a < 30 && !placed; a++) {
-      const x = room.x + 1 + Math.floor(Math.random() * (room.w - 2));
-      const y = room.y + 1 + Math.floor(Math.random() * (room.h - 2));
-      
-      if (grid[y][x] === T_DF) {
-        let enemy;
-        
-        if (isBossLevel && i === 0) {
-          const bossTypes = [
-            { name: '👑 Король Гоблинов', hp: 300, atk: 40, exp: 300, color: '#ff8844' },
-            { name: '👑 Лорд Скелетов', hp: 400, atk: 45, exp: 350, color: '#ccccff' },
-            { name: '👑 Вождь Орков', hp: 500, atk: 50, exp: 400, color: '#44aa44' },
-            { name: '👑 Призрачный Король', hp: 350, atk: 55, exp: 380, color: '#6666ff' },
-            { name: '👑 Дракон-Пожиратель', hp: 700, atk: 60, exp: 500, color: '#ff2266' }
-          ];
-          const idx = Math.floor((depth / 5 - 1) % bossTypes.length);
-          const bt = bossTypes[idx];
-          const bmult = 1 + Math.floor(depth / 20) * 0.2;
-          enemy = {
-            x, y,
-            name: bt.name,
-            color: bt.color,
-            maxhp: Math.floor(bt.hp * mult * bmult),
-            hp: Math.floor(bt.hp * mult * bmult),
-            atk: Math.floor(bt.atk * mult * bmult),
-            exp: Math.floor(bt.exp * mult * bmult),
-            spd: 0.7 + Math.random() * 0.2,
-            alive: true,
-            acd: 0,
-            anim: Math.random() * Math.PI * 2,
-            isBoss: true,
-            stunTimer: 0
-          };
-        } else {
-          const roll = Math.random();
-          let typeIdx;
-          if (depth > 20) {
-            typeIdx = roll < 0.15 ? 0 : roll < 0.30 ? 1 : roll < 0.50 ? 2 : roll < 0.75 ? 3 : 4;
-          } else if (depth > 10) {
-            typeIdx = roll < 0.20 ? 0 : roll < 0.40 ? 1 : roll < 0.60 ? 2 : roll < 0.80 ? 3 : 4;
-          } else {
-            typeIdx = roll < 0.30 ? 0 : roll < 0.55 ? 1 : roll < 0.75 ? 2 : roll < 0.90 ? 3 : 4;
-          }
-          const type = enemyTypes[typeIdx];
-          enemy = {
-            x, y,
-            name: type.name,
-            color: type.color,
-            maxhp: Math.floor(type.hp * mult),
-            hp: Math.floor(type.hp * mult),
-            atk: Math.floor(type.atk * mult),
-            exp: Math.floor(type.exp * mult),
-            spd: (1 + depth * 0.02) * (0.8 + Math.random() * 0.4),
-            alive: true,
-            acd: 0,
-            anim: Math.random() * Math.PI * 2,
-            isBoss: false,
-            stunTimer: 0
-          };
-        }
-        
-        let occupied = false;
-        for (const e of enemies) {
-          if (Math.abs(e.x - enemy.x) < 1.5 && Math.abs(e.y - enemy.y) < 1.5) {
-            occupied = true;
-            break;
-          }
-        }
-        if (!occupied) {
-          enemies.push(enemy);
-          placed = true;
-        }
+    let enemy;
+    if (isBossLevel && i === 0) {
+      const bossTypes = [
+        { name: '👑 Король Гоблинов', hp: 300, atk: 40, exp: 300, color: '#ff8844' },
+        { name: '👑 Лорд Скелетов', hp: 400, atk: 45, exp: 350, color: '#ccccff' },
+        { name: '👑 Вождь Орков', hp: 500, atk: 50, exp: 400, color: '#44aa44' },
+        { name: '👑 Призрачный Король', hp: 350, atk: 55, exp: 380, color: '#6666ff' },
+        { name: '👑 Дракон-Пожиратель', hp: 700, atk: 60, exp: 500, color: '#ff2266' }
+      ];
+      const idx = Math.floor((depth / 5 - 1) % bossTypes.length);
+      const bt = bossTypes[idx];
+      const bmult = 1 + Math.floor(depth / 20) * 0.2;
+      enemy = {
+        x: cell.x, y: cell.y,
+        name: bt.name,
+        color: bt.color,
+        maxhp: Math.floor(bt.hp * mult * bmult),
+        hp: Math.floor(bt.hp * mult * bmult),
+        atk: Math.floor(bt.atk * mult * bmult),
+        exp: Math.floor(bt.exp * mult * bmult),
+        spd: 0.7 + Math.random() * 0.2,
+        alive: true,
+        acd: 0,
+        anim: Math.random() * Math.PI * 2,
+        isBoss: true,
+        stunTimer: 0
+      };
+    } else {
+      const roll = Math.random();
+      let typeIdx;
+      if (depth > 20) {
+        typeIdx = roll < 0.15 ? 0 : roll < 0.30 ? 1 : roll < 0.50 ? 2 : roll < 0.75 ? 3 : 4;
+      } else if (depth > 10) {
+        typeIdx = roll < 0.20 ? 0 : roll < 0.40 ? 1 : roll < 0.60 ? 2 : roll < 0.80 ? 3 : 4;
+      } else {
+        typeIdx = roll < 0.30 ? 0 : roll < 0.55 ? 1 : roll < 0.75 ? 2 : roll < 0.90 ? 3 : 4;
       }
+      const type = enemyTypes[typeIdx];
+      enemy = {
+        x: cell.x, y: cell.y,
+        name: type.name,
+        color: type.color,
+        maxhp: Math.floor(type.hp * mult),
+        hp: Math.floor(type.hp * mult),
+        atk: Math.floor(type.atk * mult),
+        exp: Math.floor(type.exp * mult),
+        spd: (1 + depth * 0.02) * (0.8 + Math.random() * 0.4),
+        alive: true,
+        acd: 0,
+        anim: Math.random() * Math.PI * 2,
+        isBoss: false,
+        stunTimer: 0
+      };
     }
+    enemies.push(enemy);
   }
   
-  // Спавн предметов
+  // Спавн предметов (тоже по всей карте)
   const items = [];
-  const numItems = Math.min(3 + Math.floor(depth * 0.3), 10);
-  for (let i = 0; i < numItems; i++) {
-    const room = spawnRooms[Math.floor(Math.random() * spawnRooms.length)];
-    for (let a = 0; a < 20; a++) {
-      const x = room.x + 1 + Math.floor(Math.random() * (room.w - 2));
-      const y = room.y + 1 + Math.floor(Math.random() * (room.h - 2));
-      if (grid[y][x] === T_DF) {
-        const roll = Math.random();
-        let type;
-        if (roll < 0.25) type = 'hpPot';
-        else if (roll < 0.45) type = 'mpPot';
-        else if (roll < 0.60) type = 'sword';
-        else if (roll < 0.75) type = 'shield';
-        else type = 'gold';
-        
-        let occupied = false;
-        for (const it of items) {
-          if (Math.abs(it.x - x) < 1.5 && Math.abs(it.y - y) < 1.5) {
-            occupied = true;
-            break;
-          }
-        }
-        if (!occupied) {
-          items.push({
-            x, y, type, alive: true,
-            bob: Math.random() * Math.PI * 2,
-            col: { hpPot: '#c83232', mpPot: '#3c78dc', sword: '#969190', shield: '#8090a0', gold: '#ffd700' }[type],
-            icon: { hpPot: '🧪', mpPot: '💧', sword: '⚔️', shield: '🛡️', gold: '💰' }[type]
-          });
-          break;
-        }
-      }
-    }
+  const numItems = Math.min(5 + Math.floor(depth * 0.4), 15);
+  for (let i = 0; i < numItems && i < spawnCells.length; i++) {
+    const cell = spawnCells[spawnCells.length - 1 - i];
+    if (!cell) break;
+    
+    const roll = Math.random();
+    let type;
+    if (roll < 0.25) type = 'hpPot';
+    else if (roll < 0.45) type = 'mpPot';
+    else if (roll < 0.60) type = 'sword';
+    else if (roll < 0.75) type = 'shield';
+    else type = 'gold';
+    
+    items.push({
+      x: cell.x, y: cell.y, type, alive: true,
+      bob: Math.random() * Math.PI * 2,
+      col: { hpPot: '#c83232', mpPot: '#3c78dc', sword: '#969190', shield: '#8090a0', gold: '#ffd700' }[type],
+      icon: { hpPot: '🧪', mpPot: '💧', sword: '⚔️', shield: '🛡️', gold: '💰' }[type]
+    });
   }
   
-  return { grid, rooms, startX, startY, exitX, exitY, enemies, items };
+  return { grid, rooms, startX, startY, downX, downY, enemies, items };
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  МИРОВАЯ КАРТА
+//  МИРОВАЯ КАРТА (ОБНОВЛЕННАЯ ДЛЯ НОВОГО РАЗМЕРА)
 // ═══════════════════════════════════════════════════════════════
+// Мир теперь тоже больше
 const WRAW = [
-  "TTTTTTTTTTTTTTTTTTTTTTTTT",
-  "TGGGGGGGGGGGTTTTTGGGGGGGT",
-  "TGGGGGGGGGGGTTTTTGGGGGGGT",
-  "TGGGGGVVVGGGGGGGGGGGGGGGT",
-  "TGGGGGVVVGGGGGGGGGGGGGGGT",
-  "TGGGGGVVVGGGTTTTGGGSSSSGT",
-  "TGGGGGGGGGGGTTTTGGGSSSRGT",
-  "TGGGGGGGGGGGGGGGGGGSSSSGT",
-  "TGGGGGGGGGGGGGGGGGGGGGGGT",
-  "TWWWWWGGGGGGGGGGGGGGGGGGT",
-  "TWWWWWGGGGGGGGGGSSSSGGGGT",
-  "TGGGGGGGGGGGGGGGSSSSGGGGT",
-  "TGGGGGGGGGGGGGGGGGGGGGGGT",
-  "TGGGGGGGGTTTTGGGGGGGGGGGT",
-  "TGGGGGGGGTTTTGGGGGGGGGGGT",
-  "TGGGGGGGGGGGGGGGGGGGGGGGT",
-  "TGGGGGGGGGGGGGGGGGGGGGGGT",
-  "TGGGGGGGGGGGGGGGGGGGGGGGT",
-  "TGGGGGGGGGGGGGGGGGGGGGGGT",
-  "TTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGTTTTTTTTTGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGTTTTTTTTTGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TWWWWWWWWWGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TWWWWWWWWWGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
 ];
 
 function parseWorld(raw) {
@@ -557,11 +561,14 @@ function drawTileGeo(c2, t, rx, ry) {
       c2.fillStyle = '#1a3a2a'; c2.fillRect(rx, ry, TILE, TILE);
       c2.fillStyle = '#44ff88'; c2.beginPath(); c2.arc(rx + TILE/2, ry + TILE/2, TILE/4, 0, Math.PI * 2); c2.fill();
       c2.fillStyle = 'rgba(68,255,136,0.3)'; c2.beginPath(); c2.arc(rx + TILE/2, ry + TILE/2, TILE/2, 0, Math.PI * 2); c2.fill();
+      // Надпись "ВХОД"
+      c2.fillStyle = '#44ff88'; c2.font = '7px sans-serif'; c2.textAlign = 'center'; c2.fillText('⬆', rx + TILE/2, ry + TILE/2 + 2);
       break;
     case T_EXIT:
       c2.fillStyle = '#3a1a0a'; c2.fillRect(rx, ry, TILE, TILE);
       c2.fillStyle = '#ff8844'; c2.beginPath(); c2.arc(rx + TILE/2, ry + TILE/2, TILE/4, 0, Math.PI * 2); c2.fill();
       c2.fillStyle = 'rgba(255,136,68,0.3)'; c2.beginPath(); c2.arc(rx + TILE/2, ry + TILE/2, TILE/2, 0, Math.PI * 2); c2.fill();
+      c2.fillStyle = '#ff8844'; c2.font = '7px sans-serif'; c2.textAlign = 'center'; c2.fillText('⬇', rx + TILE/2, ry + TILE/2 + 2);
       break;
   }
 }
@@ -651,17 +658,110 @@ class NPC {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  КВЕСТЫ
+//  КВЕСТЫ (ДИНАМИЧЕСКИЕ)
 // ═══════════════════════════════════════════════════════════════
-const QUEST_DEFS = [
-  { id: 'q1', name: 'Охота на гоблинов', target: 'Гоблин', need: 5, reward: 80 },
-  { id: 'q2', name: 'Скелеты в шкафу', target: 'Скелет', need: 5, reward: 120 },
-  { id: 'q3', name: 'Истребитель орков', target: 'Орк', need: 3, reward: 180 },
-  { id: 'q4', name: 'Охотник на призраков', target: 'Призрак', need: 4, reward: 160 },
-  { id: 'q5', name: 'Убийца драконов', target: 'Дракон', need: 2, reward: 350 }
-];
+const ENEMY_TYPES = ['Гоблин', 'Скелет', 'Орк', 'Призрак', 'Дракон'];
 let questState = {};
-QUEST_DEFS.forEach(q => questState[q.id] = { kills: 0, claimed: false });
+let activeQuests = [];
+let questGenerationDepth = 0;
+
+function generateQuests(depth) {
+  const numQuests = Math.min(3 + Math.floor(depth / 5), 6);
+  const newQuests = [];
+  
+  // Базовые квесты всегда есть
+  const baseQuests = [
+    { id: 'q1', name: 'Охота на гоблинов', target: 'Гоблин', need: 5, reward: 80 },
+    { id: 'q2', name: 'Скелеты в шкафу', target: 'Скелет', need: 5, reward: 120 },
+    { id: 'q3', name: 'Истребитель орков', target: 'Орк', need: 3, reward: 180 },
+    { id: 'q4', name: 'Охотник на призраков', target: 'Призрак', need: 4, reward: 160 },
+    { id: 'q5', name: 'Убийца драконов', target: 'Дракон', need: 2, reward: 350 }
+  ];
+  
+  // Сложные квесты для больших глубин
+  const advancedQuests = [
+    { id: 'aq1', name: 'Истребитель гоблинов', target: 'Гоблин', need: 15, reward: 250 },
+    { id: 'aq2', name: 'Армия скелетов', target: 'Скелет', need: 15, reward: 350 },
+    { id: 'aq3', name: 'Орды орков', target: 'Орк', need: 10, reward: 450 },
+    { id: 'aq4', name: 'Охотник за призраками', target: 'Призрак', need: 12, reward: 400 },
+    { id: 'aq5', name: 'Повелитель драконов', target: 'Дракон', need: 5, reward: 700 },
+    { id: 'aq6', name: 'Массовое истребление', target: 'Любой', need: 30, reward: 500 }
+  ];
+  
+  // Эпические квесты для глубоких подземелий
+  const epicQuests = [
+    { id: 'eq1', name: 'Король гоблинов', target: 'Гоблин', need: 30, reward: 600 },
+    { id: 'eq2', name: 'Некромант', target: 'Скелет', need: 30, reward: 800 },
+    { id: 'eq3', name: 'Вождь орков', target: 'Орк', need: 20, reward: 1000 },
+    { id: 'eq4', name: 'Призрачный легион', target: 'Призрак', need: 25, reward: 900 },
+    { id: 'eq5', name: 'Драконий клан', target: 'Дракон', need: 10, reward: 1500 },
+    { id: 'eq6', name: 'Уничтожитель миров', target: 'Любой', need: 50, reward: 1200 }
+  ];
+  
+  // Выбираем квесты в зависимости от глубины
+  let pool = [...baseQuests];
+  if (depth >= 5) pool = pool.concat(advancedQuests.slice(0, 3));
+  if (depth >= 10) pool = pool.concat(advancedQuests.slice(3));
+  if (depth >= 20) pool = pool.concat(epicQuests.slice(0, 3));
+  if (depth >= 30) pool = pool.concat(epicQuests.slice(3));
+  
+  // Перемешиваем и выбираем
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  
+  // Выбираем уникальные квесты (не более numQuests)
+  const selected = [];
+  const usedTargets = new Set();
+  for (const q of pool) {
+    if (selected.length >= numQuests) break;
+    if (q.target === 'Любой' || !usedTargets.has(q.target)) {
+      usedTargets.add(q.target);
+      selected.push(q);
+    }
+  }
+  
+  // Если не хватило уникальных, добираем любыми
+  while (selected.length < numQuests && pool.length > selected.length) {
+    for (const q of pool) {
+      if (!selected.includes(q) && selected.length < numQuests) {
+        selected.push(q);
+      }
+    }
+  }
+  
+  return selected;
+}
+
+function initQuests(depth) {
+  const quests = generateQuests(depth);
+  activeQuests = quests;
+  questState = {};
+  quests.forEach(q => {
+    questState[q.id] = { kills: 0, claimed: false };
+  });
+  questGenerationDepth = depth;
+  updateQuestTracker();
+}
+
+function checkAndRefreshQuests(depth) {
+  // Проверяем, все ли квесты выполнены
+  const allDone = activeQuests.every(q => {
+    const st = questState[q.id];
+    return st.claimed;
+  });
+  
+  if (allDone && activeQuests.length > 0) {
+    showQNotif('🌟 Все квесты выполнены! Генерируем новые...');
+    setTimeout(() => {
+      initQuests(depth);
+      showQNotif('📋 Новые задания готовы!');
+    }, 1500);
+    return true;
+  }
+  return false;
+}
 
 const qnotif = document.getElementById('qnotif');
 let qnotifTimer = null;
@@ -674,15 +774,15 @@ function showQNotif(txt) {
 }
 
 function updateQuestTracker() {
-  const active = QUEST_DEFS.find(q => {
+  const active = activeQuests.find(q => {
     const st = questState[q.id];
     return !st.claimed && st.kills < q.need;
   });
   const el = document.getElementById('quest-tracker');
   if (active) {
     el.style.display = 'block';
-    document.getElementById('qt-name').textContent = '📋 ' + active.name;
     const st = questState[active.id];
+    document.getElementById('qt-name').textContent = '📋 ' + active.name;
     document.getElementById('qt-progress').textContent = '⚔ ' + st.kills + '/' + active.need;
   } else {
     el.style.display = 'none';
@@ -690,17 +790,41 @@ function updateQuestTracker() {
 }
 
 function onEnemyKilled(name) {
-  QUEST_DEFS.forEach(q => {
+  let anyUpdated = false;
+  
+  // Проверяем квесты на "Любой" тип
+  for (const q of activeQuests) {
+    if (q.target === 'Любой' && !questState[q.id].claimed) {
+      const st = questState[q.id];
+      if (st.kills < q.need) {
+        st.kills++;
+        anyUpdated = true;
+        if (st.kills >= q.need) {
+          showQNotif('✅ «' + q.name + '» — выполнено! Сдай у Старейшины.');
+        }
+      }
+    }
+  }
+  
+  // Проверяем квесты по конкретному типу врага
+  for (const q of activeQuests) {
     if (q.target === name && !questState[q.id].claimed) {
       const st = questState[q.id];
       if (st.kills < q.need) {
         st.kills++;
-        if (st.kills >= q.need) showQNotif('✅ «' + q.name + '» — выполнено! Сдай у Старейшины.');
-        else showQNotif('📋 ' + q.name + ': ' + st.kills + '/' + q.need);
-        updateQuestTracker();
+        anyUpdated = true;
+        if (st.kills >= q.need) {
+          showQNotif('✅ «' + q.name + '» — выполнено! Сдай у Старейшины.');
+        }
       }
     }
-  });
+  }
+  
+  if (anyUpdated) {
+    updateQuestTracker();
+    // Проверяем, все ли квесты выполнены
+    checkAndRefreshQuests(G.depth);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -753,36 +877,53 @@ function openShop() {
 
 function openQuests() {
   const p = G.p;
-  mtitle.textContent = '📜 Задания';
-  msub.textContent = 'Выполняй — получай золото';
+  mtitle.textContent = '📜 Задания (Глубина ' + G.depth + ')';
+  const totalQuests = activeQuests.length;
+  const doneQuests = activeQuests.filter(q => questState[q.id].claimed).length;
+  msub.textContent = 'Выполнено: ' + doneQuests + '/' + totalQuests;
   mbody.innerHTML = '';
-  QUEST_DEFS.forEach(q => {
-    const st = questState[q.id];
-    const done = st.kills >= q.need, claimed = st.claimed;
-    const div = document.createElement('div');
-    div.className = 'mitem';
-    const btnTxt = claimed ? 'Сдано' : done ? 'Получить' : 'В процессе';
-    const btnCls = 'mbtn ' + (claimed ? 'qclaim' : done ? 'qdone' : 'qact');
-    div.innerHTML = `<div class="micon" style="background:rgba(30,60,20,.8);border:1px solid #446644">📋</div>
-      <div class="minfo"><div class="mname">${q.name}</div><div class="mdesc">${q.target} (${st.kills}/${q.need})</div>
-      <div class="mprice">${claimed ? '✅ Выполнено' : '💰 ' + q.reward}</div></div>
-      <button class="${btnCls}" ${claimed ? 'disabled' : ''}>${btnTxt}</button>`;
-    mbody.appendChild(div);
-    if (!claimed) {
-      const btn = div.querySelector('.mbtn');
-      const h = () => {
-        if (!done) return;
-        st.claimed = true;
-        p.gold += q.reward;
-        G.floats.push(new FText(p.x, p.y - TILE, '💰 +' + q.reward, '#ffd700', 17));
-        tgVibrate('medium');
-        updateQuestTracker();
-        openQuests();
-      };
-      btn.addEventListener('click', h);
-      btn.addEventListener('touchstart', e => { e.preventDefault(); h(); }, { passive: false });
-    }
-  });
+  
+  if (activeQuests.length === 0) {
+    mbody.innerHTML = '<div style="color:#aaa;text-align:center;padding:20px;">Нет активных заданий</div>';
+  } else {
+    activeQuests.forEach(q => {
+      const st = questState[q.id];
+      const done = st.kills >= q.need, claimed = st.claimed;
+      const div = document.createElement('div');
+      div.className = 'mitem';
+      const btnTxt = claimed ? 'Сдано' : done ? 'Получить' : 'В процессе';
+      const btnCls = 'mbtn ' + (claimed ? 'qclaim' : done ? 'qdone' : 'qact');
+      div.innerHTML = `<div class="micon" style="background:rgba(30,60,20,.8);border:1px solid #446644">📋</div>
+        <div class="minfo"><div class="mname">${q.name}</div>
+        <div class="mdesc">${q.target} (${st.kills}/${q.need})</div>
+        <div class="mprice">${claimed ? '✅ Выполнено' : '💰 ' + q.reward}</div></div>
+        <button class="${btnCls}" ${claimed ? 'disabled' : ''}>${btnTxt}</button>`;
+      mbody.appendChild(div);
+      if (!claimed) {
+        const btn = div.querySelector('.mbtn');
+        const h = () => {
+          if (!done) return;
+          st.claimed = true;
+          p.gold += q.reward;
+          G.floats.push(new FText(p.x, p.y - TILE, '💰 +' + q.reward, '#ffd700', 17));
+          tgVibrate('medium');
+          updateQuestTracker();
+          // Проверяем, все ли выполнены
+          const allDone = activeQuests.every(q2 => questState[q2.id].claimed);
+          if (allDone) {
+            setTimeout(() => {
+              openQuests();
+              checkAndRefreshQuests(G.depth);
+            }, 500);
+          } else {
+            openQuests();
+          }
+        };
+        btn.addEventListener('click', h);
+        btn.addEventListener('touchstart', e => { e.preventDefault(); h(); }, { passive: false });
+      }
+    });
+  }
   modal.classList.add('open');
 }
 
@@ -1033,8 +1174,10 @@ function getSaveData(p) {
   return {
     hp: p.hp, mp: p.mp, maxhp: p.maxhp, maxmp: p.maxmp,
     atk: p.atk, def: p.def, lv: p.lv, exp: p.exp, exn: p.exn,
-    gold: p.gold, bag: p.bag, questState: questState,
-    depth: G.depth
+    gold: p.gold, bag: p.bag, depth: G.depth,
+    questState: questState,
+    activeQuests: activeQuests,
+    questGenerationDepth: questGenerationDepth
   };
 }
 
@@ -1050,8 +1193,15 @@ function applySaveData(p, d) {
   p.exn = d.exn || 100;
   p.gold = d.gold || 0;
   p.bag = d.bag || { hpPot: 0, mpPot: 0, sword: 0, shield: 0 };
-  if (d.questState) Object.assign(questState, d.questState);
   G.depth = d.depth || 0;
+  
+  if (d.activeQuests && d.activeQuests.length > 0) {
+    activeQuests = d.activeQuests;
+    questState = d.questState || {};
+    questGenerationDepth = d.questGenerationDepth || 0;
+  } else {
+    initQuests(G.depth || 1);
+  }
 }
 
 async function saveGame(p) {
@@ -1081,6 +1231,7 @@ const el = {
   slv: document.getElementById('slv'), sat: document.getElementById('sat'),
   sgold: document.getElementById('s-gold'), sloc: document.getElementById('s-loc'),
   ssave: document.getElementById('s-save'), sdepth: document.getElementById('s-depth'),
+  sq: document.getElementById('s-quests'),
   qv: [0,1,2,3].map(i => document.getElementById('qv' + i)),
   cd: [0,1,2,3].map(i => document.getElementById('cd' + i))
 };
@@ -1109,6 +1260,12 @@ function hudUpdate(p) {
   el.sgold.textContent = '💰' + p.gold;
   el.sloc.textContent = G.depth > 0 ? '⚔ Подземелье' : '📍 Мир';
   el.sdepth.textContent = '⚔ ' + G.depth;
+  
+  // Количество активных квестов
+  const total = activeQuests.length;
+  const done = activeQuests.filter(q => questState[q.id]?.claimed).length;
+  el.sq.textContent = '📋' + (total - done) + '/' + total;
+  
   el.qv[0].textContent = 'x' + p.bag.hpPot;
   el.qv[1].textContent = 'x' + p.bag.mpPot;
   el.qv[2].textContent = 'x' + p.bag.sword;
@@ -1220,16 +1377,18 @@ document.getElementById('bp').addEventListener('click', () => { inp.portal = tru
 // ═══════════════════════════════════════════════════════════════
 const PW = { x: 12 * TILE + TILE/2, y: 3 * TILE + TILE/2 };
 
-function drawPortal(cx, cy, pos, t, col, label) {
+function drawPortal(cx, cy, pos, t, col, label, icon) {
   const px = wx(pos.x, cx);
   const py = wy(pos.y, cy);
   for (let i = 0; i < 8; i++) {
     const a = t + i * Math.PI / 4;
     ctx.fillStyle = col;
+    ctx.globalAlpha = 0.5 + Math.sin(t * 2 + i) * 0.3;
     ctx.beginPath();
     ctx.arc(px + Math.cos(a) * 20*SC, py + Math.sin(a) * 20*SC, 4*SC, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.globalAlpha = 1;
   ctx.strokeStyle = col;
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -1237,9 +1396,14 @@ function drawPortal(cx, cy, pos, t, col, label) {
   ctx.stroke();
   if (label) {
     ctx.fillStyle = col;
-    ctx.font = `${10*SC}px sans-serif`;
+    ctx.font = `${9*SC}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText(label, px, py - 24*SC);
+  }
+  if (icon) {
+    ctx.font = `${14*SC}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(icon, px, py + 6*SC);
   }
 }
 
@@ -1265,7 +1429,7 @@ const worldCache = makeCache(worldGrid);
 // Мировые враги
 const worldEnemies = [];
 const worldItems = [];
-for (let i = 0; i < 8; i++) {
+for (let i = 0; i < 10; i++) {
   for (let a = 0; a < 50; a++) {
     const x = 2 + Math.floor(Math.random() * (COLS - 4));
     const y = 2 + Math.floor(Math.random() * (ROWS - 4));
@@ -1275,7 +1439,7 @@ for (let i = 0; i < 8; i++) {
     }
   }
 }
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 12; i++) {
   for (let a = 0; a < 50; a++) {
     const x = 2 + Math.floor(Math.random() * (COLS - 4));
     const y = 2 + Math.floor(Math.random() * (ROWS - 4));
@@ -1303,7 +1467,7 @@ const G = {
   projs: [],
   t: 0,
   dungeonGrid: null,
-  dungeonExit: null,
+  dungeonDown: null, // Портал спуска вниз
   dungeonEnemies: null,
   dungeonItems: null
 };
@@ -1315,12 +1479,15 @@ async function initGame() {
   const loaded = await loadGame(G.p);
   G.p.x = SPAWN_X;
   G.p.y = SPAWN_Y;
-  if (loaded) {
-    G.floats.push(new FText(G.p.x, G.p.y - TILE, '💾 Прогресс восстановлен', '#ffd700', 14));
-    if (G.depth > 0) {
-      enterDungeon(G.depth);
-    }
+  
+  if (!loaded || !activeQuests || activeQuests.length === 0) {
+    initQuests(1);
   }
+  
+  if (loaded && G.depth > 0) {
+    enterDungeon(G.depth);
+  }
+  
   updateQuestTracker();
 }
 initGame();
@@ -1338,10 +1505,11 @@ function enterDungeon(depth) {
   const gen = generateDungeon(G.depth);
   
   G.dungeonGrid = gen.grid;
-  G.dungeonExit = { x: gen.exitX, y: gen.exitY };
+  G.dungeonDown = { x: gen.downX, y: gen.downY };
   G.enemies = gen.enemies;
   G.items = gen.items;
   
+  // Телепортируем игрока на вход (он же выход наверх)
   G.p.x = gen.startX * TILE + TILE/2;
   G.p.y = gen.startY * TILE + TILE/2;
   
@@ -1354,6 +1522,12 @@ function enterDungeon(depth) {
   if (G.depth % 5 === 0 && G.depth > 0) {
     showQNotif('👑 БОСС ЭТАЖА! Осторожнее!');
   }
+  
+  // Обновляем квесты при входе в подземелье
+  if (G.depth > questGenerationDepth + 3) {
+    // Если ушли глубже, чем на 3 уровня от генерации квестов — обновляем
+    initQuests(G.depth);
+  }
 }
 
 function exitDungeon() {
@@ -1363,11 +1537,41 @@ function exitDungeon() {
   G.enemies = worldEnemies;
   G.items = worldItems;
   G.dungeonGrid = null;
-  G.dungeonExit = null;
+  G.dungeonDown = null;
   G._dungeonCache = null;
   G.floats.push(new FText(G.p.x, G.p.y - TILE, '🌿 Мир!', '#00b4a0', 15));
   tgVibrate('heavy');
   saveGame(G.p);
+}
+
+function goDeeper() {
+  // Спуск на следующий уровень
+  const newDepth = G.depth + 1;
+  const gen = generateDungeon(newDepth);
+  
+  G.depth = newDepth;
+  G.dungeonGrid = gen.grid;
+  G.dungeonDown = { x: gen.downX, y: gen.downY };
+  G.enemies = gen.enemies;
+  G.items = gen.items;
+  
+  G.p.x = gen.startX * TILE + TILE/2;
+  G.p.y = gen.startY * TILE + TILE/2;
+  
+  G._dungeonCache = makeCache(G.dungeonGrid);
+  
+  G.floats.push(new FText(G.p.x, G.p.y - TILE, '⬇ Глубина ' + G.depth, '#ff8844', 16));
+  tgVibrate('heavy');
+  saveGame(G.p);
+  
+  if (G.depth % 5 === 0) {
+    showQNotif('👑 БОСС ЭТАЖА! Осторожнее!');
+  }
+  
+  // Обновляем квесты
+  if (G.depth > questGenerationDepth + 2) {
+    initQuests(G.depth);
+  }
 }
 
 function getCurrentTM() {
@@ -1406,14 +1610,42 @@ function loop() {
   if (inp.portal) {
     inp.portal = false;
     if (G.depth > 0) {
-      if (G.dungeonExit) {
-        const ex = G.dungeonExit.x * TILE + TILE/2;
-        const ey = G.dungeonExit.y * TILE + TILE/2;
-        if (Math.hypot(p.x - ex, p.y - ey) < TILE * 2) {
-          fadeTransition(() => exitDungeon());
+      // В подземелье: проверяем, на каком портале игрок
+      const entryPos = { x: (G.dungeonGrid ? G.dungeonGrid.findIndex(row => row.includes(T_ENTRANCE)) : 0) };
+      // Проще: проверяем координаты игрока относительно порталов
+      let onEntry = false;
+      let onDown = false;
+      
+      // Ищем порталы на карте
+      for (let y = 0; y < ROWS && !onEntry; y++) {
+        for (let x = 0; x < COLS && !onEntry; x++) {
+          if (tm[y][x] === T_ENTRANCE) {
+            const ex = x * TILE + TILE/2;
+            const ey = y * TILE + TILE/2;
+            if (Math.hypot(p.x - ex, p.y - ey) < TILE * 2) {
+              onEntry = true;
+            }
+          }
         }
       }
+      
+      if (G.dungeonDown) {
+        const dx = G.dungeonDown.x * TILE + TILE/2;
+        const dy = G.dungeonDown.y * TILE + TILE/2;
+        if (Math.hypot(p.x - dx, p.y - dy) < TILE * 2) {
+          onDown = true;
+        }
+      }
+      
+      if (onEntry) {
+        // Входной портал = выход наверх
+        fadeTransition(() => exitDungeon());
+      } else if (onDown) {
+        // Портал спуска вниз
+        fadeTransition(() => goDeeper());
+      }
     } else {
+      // В мире — вход в подземелье
       if (Math.hypot(p.x - PW.x, p.y - PW.y) < TILE * 2) {
         fadeTransition(() => enterDungeon(G.depth + 1));
       } else {
@@ -1550,12 +1782,30 @@ function loop() {
   ctx.drawImage(cache, 0, 0);
   ctx.restore();
   
-  // Порталы
-  if (G.depth > 0 && G.dungeonExit) {
-    const exitPos = { x: G.dungeonExit.x * TILE + TILE/2, y: G.dungeonExit.y * TILE + TILE/2 };
-    drawPortal(cx, cy, exitPos, G.t, '#44ff88', '🌿 Выход');
+  // Порталы в подземелье
+  if (G.depth > 0 && G.dungeonGrid) {
+    // Ищем порталы на карте
+    let entryPos = null;
+    let downPos = null;
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        if (G.dungeonGrid[y][x] === T_ENTRANCE) {
+          entryPos = { x: x * TILE + TILE/2, y: y * TILE + TILE/2 };
+        }
+        if (G.dungeonGrid[y][x] === T_EXIT) {
+          downPos = { x: x * TILE + TILE/2, y: y * TILE + TILE/2 };
+        }
+      }
+    }
+    if (entryPos) {
+      drawPortal(cx, cy, entryPos, G.t, '#44ff88', '🌿 Выход наверх', '⬆');
+    }
+    if (downPos) {
+      drawPortal(cx, cy, downPos, G.t + Math.PI, '#ff8844', '⬇ Глубже', '⬇');
+    }
   } else {
-    drawPortal(cx, cy, PW, G.t, '#ff8844', '⚔ Подземелье');
+    // В мире — портал входа
+    drawPortal(cx, cy, PW, G.t, '#ff8844', '⚔ Подземелье', '⬇');
   }
   
   // Предметы
@@ -1699,60 +1949,58 @@ loop();
 
 ---
 
-📁 CHANGELOG-v3.2.txt
+📁 CHANGELOG-v3.3.txt
 
 ```
 ═══════════════════════════════════════════════════════════════════
   ⚔️ TG-RPG — ЖУРНАЛ ИЗМЕНЕНИЙ
 ═══════════════════════════════════════════════════════════════════
 
-ТЕКУЩАЯ ВЕРСИЯ: v3.2.0
+ТЕКУЩАЯ ВЕРСИЯ: v3.3.0
 ДАТА ВЫПУСКА: 26.06.2026
 
 ───────────────────────────────────────────────────────────────────
-ИЗМЕНЕНИЯ В v3.2.0:
+ИЗМЕНЕНИЯ В v3.3.0:
 ───────────────────────────────────────────────────────────────────
 
-🗑️ УДАЛЕНО:
-  • Мини-карта — полностью убрана (по запросу пользователя)
+🗺️ РАЗМЕР ЛОКАЦИЙ:
+  • Подземелья увеличены с 25×20 до 40×32 тайлов
+  • Добавлены широкие коридоры (2 клетки) для свободного перемещения
+  • Мир тоже увеличен до новых размеров
 
-✨ УЛУЧШЕНИЯ:
-  • Оптимизирован код рендеринга
-  • Уменьшен размер HTML-файла
-  • Упрощён интерфейс
+👾 МОНСТРЫ:
+  • Теперь спавнятся по всей карте, не только в комнатах
+  • Могут выходить в коридоры и перемещаться по всему подземелью
+  • Увеличено количество врагов (до 25 на уровне)
 
-🐛 ИСПРАВЛЕНИЯ:
-  • Исправлены мелкие баги с отображением
-  • Исправлена ошибка с потерей фокуса
+🚪 ПОРТАЛЫ:
+  • Входной портал (⬆) — он же выход на поверхность
+  • Второй портал (⬇) — спуск на следующий уровень
+  • Теперь можно идти глубже бесконечно
+
+📋 КВЕСТЫ:
+  • Генерируются динамически в зависимости от глубины
+  • После выполнения всех квестов — появляются новые, более сложные
+  • С каждыми 5 уровнями квесты становятся сложнее
+  • Добавлены эпические квесты для больших глубин (от 20+)
+  • Квест "Любой" — убийство любого врага засчитывается
+
+📊 HUD:
+  • Добавлен индикатор количества активных квестов (📋N/M)
+  • Клик на индикатор открывает окно квестов
 
 ───────────────────────────────────────────────────────────────────
 ПРЕДЫДУЩИЕ ВЕРСИИ:
 ───────────────────────────────────────────────────────────────────
 
+v3.2.0 — Удалена мини-карта
 v3.1.0 — Исправление ошибок
-  • Исправлена мини-карта (была на весь экран)
-  • Исправлена генерация подземелий
-  • Исправлен спавн боссов
-  • Исправлен портал выхода
-
 v3.0.0 — Первая версия с генерацией подземелий
-  • Бесконечные подземелья с процедурной генерацией
-  • Мини-карта
-  • Боссы на каждом 5-м уровне
-  • Система сохранения в CloudStorage
-
 v2.0.0 — Интеграция с Telegram
-  • Вибрация, тема Telegram, CloudStorage
-  • Критические удары
-  • Трекер квестов
-
 v1.0.0 — Первый релиз
-  • Базовая RPG механика
-  • 5 фиксированных подземелий
-  • Квесты и магазин
 
 ───────────────────────────────────────────────────────────────────
-ПЛАНИРУЕТСЯ В v3.3.0:
+ПЛАНИРУЕТСЯ В v3.4.0:
 ───────────────────────────────────────────────────────────────────
 
 🔜 • Система достижений (за глубину, убийства, золото)
@@ -1769,20 +2017,23 @@ v1.0.0 — Первый релиз
 
 📦 КАК СОБРАТЬ АРХИВ
 
-1. Создайте папку tg-rpg-v3.2
-2. Поместите туда tg-rpg-v3.2.html
-3. Поместите туда CHANGELOG-v3.2.txt
-4. Заархивируйте папку → tg-rpg-v3.2.zip
+1. Создайте папку tg-rpg-v3.3
+2. Поместите туда tg-rpg-v3.3.html
+3. Поместите туда CHANGELOG-v3.3.txt
+4. Заархивируйте папку → tg-rpg-v3.3.zip
 
 ---
 
-✅ ЧТО ИЗМЕНИЛОСЬ
+✅ ЧТО ИЗМЕНИЛОСЬ В ЭТОЙ ВЕРСИИ
 
 Что было Что стало
-Мини-карта в правом нижнем углу Полностью удалена
-Дополнительный элемент интерфейса Чистый экран, ничего не мешает
-Лишний код для мини-карты Код стал легче и быстрее
+Карта 25×20 Карта 40×32 (больше пространства)
+Монстры только в комнатах Монстры по всей карте (включая коридоры)
+Один портал (вход/выход) Два портала: вход=выход наверх, второй=спуск вниз
+Фиксированные квесты Динамические квесты, обновляются с глубиной
+5 базовых квестов До 6 квестов, сложность растёт с глубиной
+Квесты не обновлялись Автообновление после выполнения всех
 
 ---
 
-Теперь игра чистая, без лишних элементов на экране. Всё работает стабильно! 🎮
+Теперь игра стала масштабнее, интереснее и бесконечной! 🎮
