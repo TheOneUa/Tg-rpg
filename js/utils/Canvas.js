@@ -29,8 +29,10 @@ function fadeTransition(callback) {
     overlay.classList.add('active');
     setTimeout(() => {
         callback();
-        setTimeout(() => overlay.classList.remove('active'), 100);
-    }, 400);
+        setTimeout(() => {
+            overlay.classList.remove('active');
+        }, 150);
+    }, 350);
 }
 
 console.log('✅ Canvas.js загружен');

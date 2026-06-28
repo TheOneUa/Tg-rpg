@@ -2,7 +2,7 @@
 //  MAIN - ТОЧКА ВХОДА
 // ============================================================
 
-console.log('⚔️ TG-RPG v' + VERSION + ' загружается...');
+console.log('⚔️ TG-RPG v5.2.1 загружается...');
 
 // ============================================================
 //  ГЛОБАЛЬНЫЕ ДАННЫЕ
@@ -13,7 +13,7 @@ let dead = false;
 let gameStarted = false;
 
 const G = {
-    p: null, // Будет создан позже
+    p: null,
     depth: 0,
     enemies: [],
     items: [],
@@ -28,6 +28,56 @@ const G = {
 };
 
 // ============================================================
+//  ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ — ПОИСК БЛИЖАЙШЕГО ОБЪЕКТА
+// ============================================================
+function findNearestInteractable(px, py, tm, npcs) {
+    const result = { type: null, target: null, dist: Infinity };
+    const TILE = CFG.TILE;
+    const CHECK_DIST = TILE * 1.8;
+    
+    if (!npcs) npcs = [];
+    
+    // Проверяем NPC
+    for(const npc of npcs) {
+        if (!npc || !npc.x || !npc.y) continue;
+        const dist = Math.hypot(px - npc.x, py - npc.y);
+        if(dist < CHECK_DIST && dist < result.dist) {
+            result.type = 'npc';
+            result.target = npc;
+            result.dist = dist;
+        }
+    }
+    
+    // Проверяем порталы
+    if(G.depth > 0 && G.dungeonGrid) {
+        for(let y=0; y<CFG.D_ROWS; y++) {
+            for(let x=0; x<CFG.D_COLS; x++) {
+                if(G.dungeonGrid[y][x] === T_ENTRANCE || G.dungeonGrid[y][x] === T_EXIT) {
+                    const ex = x * TILE + TILE/2;
+                    const ey = y * TILE + TILE/2;
+                    const dist = Math.hypot(px - ex, py - ey);
+                    if(dist < CHECK_DIST && dist < result.dist) {
+                        result.type = G.dungeonGrid[y][x] === T_ENTRANCE ? 'portal_exit' : 'portal_deeper';
+                        result.target = { x: ex, y: ey, tileType: G.dungeonGrid[y][x] };
+                        result.dist = dist;
+                    }
+                }
+            }
+        }
+    } else if (G.depth === 0) {
+        // В деревне — портал в подземелье
+        const dist = Math.hypot(px - PORTAL_POS.x, py - PORTAL_POS.y);
+        if(dist < CHECK_DIST && dist < result.dist) {
+            result.type = 'portal_enter';
+            result.target = { x: PORTAL_POS.x, y: PORTAL_POS.y };
+            result.dist = dist;
+        }
+    }
+    
+    return result;
+}
+
+// ============================================================
 //  ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 function init() {
@@ -40,6 +90,9 @@ function init() {
     // Создаём игрока
     G.p = new Player();
     console.log('✅ Игрок создан');
+    
+    // Инициализируем NPC
+    G.npcs = [new NPC(3, 3, 0), new NPC(5, 3, 1)];
     
     // Telegram
     const tgUser = initTelegram();
@@ -64,7 +117,7 @@ function init() {
     
     // Запуск цикла
     console.log('🚀 Запуск игрового цикла...');
-    requestAnimationFrame(loop);
+    loop();
 }
 
 // ============================================================
@@ -88,15 +141,12 @@ function initAuthHandlers() {
         });
     });
     
-    // Кнопка входа (если не сработал авто-вход)
     authBtn.addEventListener('click', () => {
-        // Если уже авторизован — просто переходим
         if (playerData.tgUsername) {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('create-screen').classList.add('open');
             if (hasSave()) showSaveDialog();
         } else {
-            // Демо-режим
             playerData.tgUsername = 'Демо-игрок';
             document.getElementById('auth-user').textContent = '👤 Демо-режим';
             document.getElementById('auth-btn').textContent = '✅ Продолжить';
@@ -146,13 +196,11 @@ function initAuthHandlers() {
 //  UI ОБРАБОТЧИКИ
 // ============================================================
 function initUIHandlers() {
-    // Кнопка рестарта
     document.getElementById('rbtn').addEventListener('click', () => {
         resetSave();
         location.reload();
     });
     
-    // Диалог сохранения
     document.getElementById('sd-continue').addEventListener('click', () => {
         document.getElementById('save-dialog').classList.remove('open');
         if (loadGame()) {
@@ -174,7 +222,6 @@ function initUIHandlers() {
         showQNotif('🗑️ Прогресс сброшен');
     });
     
-    // Диалог выбора уровня
     document.getElementById('lv-cancel').addEventListener('click', () => {
         document.getElementById('level-dialog').classList.remove('open');
     });
@@ -260,8 +307,7 @@ function startGame(loaded) {
     G.p.x = CFG.SPAWN_X;
     G.p.y = CFG.SPAWN_Y;
     
-    // Инициализация NPC
-    const villageGrid = parseVillage(VILLAGE_RAW);
+    // Инициализируем NPC
     G.npcs = [new NPC(3, 3, 0), new NPC(5, 3, 1)];
     
     if(!loaded) {
@@ -299,6 +345,7 @@ function startGame(loaded) {
 //  ПЕРЕХОДЫ
 // ============================================================
 function enterDungeon(depth) {
+    console.log('🏚️ Вход в подземелье, глубина:', depth);
     G.depth = depth;
     maxDepthReached = Math.max(maxDepthReached, depth);
     stats.maxDepth = Math.max(stats.maxDepth, depth);
@@ -329,6 +376,7 @@ function enterDungeon(depth) {
 }
 
 function exitDungeon() {
+    console.log('🌿 Выход из подземелья');
     G.depth = 0;
     G.p.x = CFG.SPAWN_X;
     G.p.y = CFG.SPAWN_Y;
@@ -364,7 +412,13 @@ function getCurrentCache() {
 //  ИГРОВОЙ ЦИКЛ
 // ============================================================
 function loop() {
-    if(dead || !gameStarted) {
+    // Если игра не запущена — просто ждём
+    if(!gameStarted) {
+        requestAnimationFrame(loop);
+        return;
+    }
+    
+    if(dead) {
         requestAnimationFrame(loop);
         return;
     }
@@ -374,44 +428,69 @@ function loop() {
     
     const tm = getCurrentTM();
     const cache = getCurrentCache();
-    const enemies = G.enemies;
-    const items = G.items;
-    const npcs = G.npcs;
+    const enemies = G.enemies || [];
+    const items = G.items || [];
+    const npcs = G.npcs || [];
     const p = G.p;
     
-    // Портал
-    if(inp.portal && !document.getElementById('level-dialog').classList.contains('open')) {
-        inp.portal = false;
-        if(G.depth > 0) {
-            let onEntry = false, onDown = false;
-            for(let y=0; y<CFG.D_ROWS && !onEntry; y++) {
-                for(let x=0; x<CFG.D_COLS && !onEntry; x++) {
-                    if(tm[y][x] === T_ENTRANCE) {
-                        const ex = x*CFG.TILE + CFG.TILE/2;
-                        const ey = y*CFG.TILE + CFG.TILE/2;
-                        if(Math.hypot(p.x - ex, p.y - ey) < CFG.TILE * 2) onEntry = true;
-                    }
-                }
-            }
-            if(G.dungeonDown) {
-                const dx = G.dungeonDown.x * CFG.TILE + CFG.TILE/2;
-                const dy = G.dungeonDown.y * CFG.TILE + CFG.TILE/2;
-                if(Math.hypot(p.x - dx, p.y - dy) < CFG.TILE * 2) onDown = true;
-            }
-            if(onEntry) fadeTransition(() => exitDungeon());
-            else if(onDown) {
-                const nextDepth = G.depth + 1;
-                fadeTransition(() => enterDungeon(nextDepth));
+    if (!p) {
+        requestAnimationFrame(loop);
+        return;
+    }
+    
+    // ============================================================
+    //  УМНОЕ ВЗАИМОДЕЙСТВИЕ (кнопка действия)
+    // ============================================================
+    if(inp.action) {
+        inp.action = false;
+        
+        // Находим ближайший интерактивный объект
+        const nearest = findNearestInteractable(p.x, p.y, tm, npcs);
+        
+        if(nearest.type) {
+            console.log('🔍 Взаимодействие с:', nearest.type);
+            
+            switch(nearest.type) {
+                case 'npc':
+                    // Разговор с NPC
+                    nearest.target.talk();
+                    tgVibrate('light');
+                    break;
+                    
+                case 'portal_enter':
+                    // Вход в подземелье (деревня)
+                    console.log('🚪 Открываем диалог выбора уровня');
+                    openLevelDialog();
+                    tgVibrate('medium');
+                    break;
+                    
+                case 'portal_exit':
+                    // Выход из подземелья
+                    console.log('⬆️ Выход на поверхность');
+                    fadeTransition(() => exitDungeon());
+                    tgVibrate('medium');
+                    break;
+                    
+                case 'portal_deeper':
+                    // Спуск глубже
+                    const nextDepth = G.depth + 1;
+                    console.log('⬇️ Спуск на глубину:', nextDepth);
+                    fadeTransition(() => enterDungeon(nextDepth));
+                    tgVibrate('medium');
+                    break;
             }
         } else {
-            openLevelDialog();
+            // Если ничего рядом — показываем подсказку
+            if (G.depth === 0) {
+                showQNotif('❓ Подойди к NPC или порталу');
+            }
         }
     }
     
     // Обновление игрока
     p.update(inp, tm, enemies, items, G.parts, G.floats, G.projs, npcs);
     
-    // Обновление врагов
+    // Обновление врагов (только в подземелье)
     if(G.depth > 0) {
         for(const e of enemies) {
             if(!e.alive) {

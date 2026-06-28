@@ -103,10 +103,4 @@ document.getElementById('bp').addEventListener('click', () => {
     tgVibrate('light');
 });
 
-// Сброс кнопок после использования
-setInterval(() => {
-    // Сбрасываем одноразовые действия после их обработки
-    // Основной сброс происходит в main.js после обработки
-}, 100);
-
 console.log('✅ Input.js загружен');

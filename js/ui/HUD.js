@@ -34,6 +34,8 @@ function updateSlotCooldowns(cds) {
 }
 
 function hudUpdate(p) {
+    if (!p) return;
+    
     HUD_ELEMENTS.fhp.style.width = Math.max(0, p.hp/p.maxhp*100) + '%';
     HUD_ELEMENTS.fmp.style.width = Math.max(0, p.mp/p.maxmp*100) + '%';
     HUD_ELEMENTS.fxp.style.width = Math.max(0, p.exp/p.exn*100) + '%';
@@ -46,12 +48,12 @@ function hudUpdate(p) {
     HUD_ELEMENTS.sdepth.textContent = '⚔ ' + G.depth;
     HUD_ELEMENTS.smaxdepth.textContent = '🏆 ' + maxDepthReached;
     
-    const total = activeQuests.length;
-    const done = activeQuests.filter(q => questState[q.id]?.claimed).length;
+    const total = activeQuests ? activeQuests.length : 0;
+    const done = activeQuests ? activeQuests.filter(q => questState[q.id]?.claimed).length : 0;
     HUD_ELEMENTS.sq.textContent = '📋' + (total - done) + '/' + total;
     
-    const achDone = ACHIEVEMENTS.filter(a => achievements[a.id]).length;
-    HUD_ELEMENTS.sa.textContent = '🏆' + achDone + '/' + ACHIEVEMENTS.length;
+    const achDone = ACHIEVEMENTS ? ACHIEVEMENTS.filter(a => achievements[a.id]).length : 0;
+    HUD_ELEMENTS.sa.textContent = '🏆' + achDone + '/' + (ACHIEVEMENTS ? ACHIEVEMENTS.length : 0);
     
     HUD_ELEMENTS.qv[0].textContent = 'x' + p.bag.hpPot;
     HUD_ELEMENTS.qv[1].textContent = 'x' + p.bag.mpPot;
@@ -68,12 +70,18 @@ function hudUpdate(p) {
 function updateActionButton() {
     const btn = document.getElementById('bp');
     if (!btn) return;
-    
     if (!G.p) return;
     
     const p = G.p;
     const npcs = G.npcs || [];
-    const tm = getCurrentTM ? getCurrentTM() : [];
+    
+    // Получаем текущую карту
+    let tm = [];
+    if (G.dungeonGrid && G.depth > 0) {
+        tm = G.dungeonGrid;
+    } else {
+        tm = parseVillage(VILLAGE_RAW);
+    }
     
     const nearest = findNearestInteractable(p.x, p.y, tm, npcs);
     
