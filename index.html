@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>⚔️ TG-RPG v4.5</title>
+    <title>⚔️ TG-RPG v5.1</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -46,7 +46,7 @@
         <div>Авторизация через Telegram</div>
         <div class="user" id="auth-user"></div>
     </div>
-    <div class="version-info">v4.5.0</div>
+    <div class="version-info" id="version-display">v5.1.0</div>
 </div>
 
 <!-- ЭКРАН СОЗДАНИЯ ПЕРСОНАЖА -->
@@ -147,17 +147,17 @@
 <canvas id="canvas"></canvas>
 
 <!-- ============================================================ -->
-<!--  SCRIPTS -->
+<!--  SCRIPTS (ПРАВИЛЬНЫЙ ПОРЯДОК) -->
 <!-- ============================================================ -->
 
-<!-- Конфиг -->
+<!-- 1. Конфиг -->
 <script src="js/config.js"></script>
 
-<!-- Telegram -->
+<!-- 2. Telegram -->
 <script src="js/telegram/Haptic.js"></script>
 <script src="js/telegram/Auth.js"></script>
 
-<!-- Core -->
+<!-- 3. Core -->
 <script src="js/core/Particle.js"></script>
 <script src="js/core/FText.js"></script>
 <script src="js/core/NPC.js"></script>
@@ -165,26 +165,26 @@
 <script src="js/core/Enemy.js"></script>
 <script src="js/core/Player.js"></script>
 
-<!-- World -->
+<!-- 4. World -->
 <script src="js/world/Village.js"></script>
 <script src="js/world/Dungeon.js"></script>
 <script src="js/world/Portal.js"></script>
 
-<!-- Systems -->
+<!-- 5. Systems -->
 <script src="js/systems/Achievements.js"></script>
 <script src="js/systems/Quests.js"></script>
 <script src="js/systems/Shop.js"></script>
 <script src="js/systems/Save.js"></script>
 
-<!-- UI -->
+<!-- 6. UI -->
 <script src="js/ui/HUD.js"></script>
 <script src="js/ui/Modal.js"></script>
 <script src="js/ui/Input.js"></script>
 
-<!-- Utils -->
+<!-- 7. Utils -->
 <script src="js/utils/Canvas.js"></script>
 
-<!-- Main -->
+<!-- 8. Main -->
 <script src="js/main.js"></script>
 
 </body>

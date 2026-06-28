@@ -10,11 +10,17 @@ function getTelegramUser() {
 }
 
 function initTelegram() {
-    if (window.Telegram?.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-        tgApplyTheme();
-        return getTelegramUser();
+    try {
+        if (window.Telegram?.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            tgApplyTheme();
+            return getTelegramUser();
+        }
+    } catch(e) {
+        console.warn('Telegram init error:', e);
     }
     return null;
 }
+
+console.log('✅ Auth.js загружен');

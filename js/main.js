@@ -2,6 +2,8 @@
 //  MAIN - ТОЧКА ВХОДА
 // ============================================================
 
+console.log('⚔️ TG-RPG v' + VERSION + ' загружается...');
+
 // ============================================================
 //  ГЛОБАЛЬНЫЕ ДАННЫЕ
 // ============================================================
@@ -11,7 +13,7 @@ let dead = false;
 let gameStarted = false;
 
 const G = {
-    p: new Player(),
+    p: null, // Будет создан позже
     depth: 0,
     enemies: [],
     items: [],
@@ -26,11 +28,18 @@ const G = {
 };
 
 // ============================================================
-//  ЗАГРУЗКА
+//  ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 function init() {
+    console.log('🔄 Инициализация...');
+    
     // Версия
-    document.querySelector('.version-info').textContent = 'v' + VERSION;
+    document.getElementById('version-display').textContent = 'v' + VERSION;
+    console.log('✅ Версия: ' + VERSION);
+    
+    // Создаём игрока
+    G.p = new Player();
+    console.log('✅ Игрок создан');
     
     // Telegram
     const tgUser = initTelegram();
@@ -39,11 +48,14 @@ function init() {
         playerData.tgUsername = tgUser.username || tgUser.first_name || 'Игрок';
         document.getElementById('auth-user').textContent = '👤 ' + playerData.tgUsername;
         document.getElementById('auth-btn').textContent = '✅ Авторизован!';
+        console.log('✅ Telegram авторизация: ' + playerData.tgUsername);
         setTimeout(() => {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('create-screen').classList.add('open');
             if (hasSave()) showSaveDialog();
         }, 500);
+    } else {
+        console.log('ℹ️ Telegram не найден, демо-режим');
     }
     
     // Инициализация кнопок
@@ -51,6 +63,7 @@ function init() {
     initUIHandlers();
     
     // Запуск цикла
+    console.log('🚀 Запуск игрового цикла...');
     requestAnimationFrame(loop);
 }
 
@@ -75,8 +88,24 @@ function initAuthHandlers() {
         });
     });
     
+    // Кнопка входа (если не сработал авто-вход)
     authBtn.addEventListener('click', () => {
-        // Уже обработано в init
+        // Если уже авторизован — просто переходим
+        if (playerData.tgUsername) {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('create-screen').classList.add('open');
+            if (hasSave()) showSaveDialog();
+        } else {
+            // Демо-режим
+            playerData.tgUsername = 'Демо-игрок';
+            document.getElementById('auth-user').textContent = '👤 Демо-режим';
+            document.getElementById('auth-btn').textContent = '✅ Продолжить';
+            setTimeout(() => {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('create-screen').classList.add('open');
+                if (hasSave()) showSaveDialog();
+            }, 300);
+        }
     });
     
     createBtn.addEventListener('click', () => {
@@ -109,6 +138,8 @@ function initAuthHandlers() {
     heroName.addEventListener('keydown', e => {
         if (e.key === 'Enter') createBtn.click();
     });
+    
+    console.log('✅ Обработчики авторизации настроены');
 }
 
 // ============================================================
@@ -167,6 +198,8 @@ function initUIHandlers() {
         fadeTransition(() => enterDungeon(selectedLevel));
         saveGame(true);
     });
+    
+    console.log('✅ UI обработчики настроены');
 }
 
 // ============================================================
@@ -223,6 +256,7 @@ function showSaveDialog() {
 //  ЗАПУСК ИГРЫ
 // ============================================================
 function startGame(loaded) {
+    console.log('🎮 Запуск игры...');
     G.p.x = CFG.SPAWN_X;
     G.p.y = CFG.SPAWN_Y;
     
@@ -236,12 +270,14 @@ function startGame(loaded) {
         initQuests(0);
         initAchievements();
         saveGame(true);
+        console.log('✅ Новый персонаж создан');
     } else {
         if(G.depth > 0) {
             maxDepthReached = Math.max(maxDepthReached, G.depth);
             enterDungeon(G.depth);
         }
         showQNotif('💾 Прогресс восстановлен!');
+        console.log('✅ Прогресс загружен');
     }
     
     gameStarted = true;
@@ -256,6 +292,7 @@ function startGame(loaded) {
     
     showQNotif('👋 Добро пожаловать, ' + playerData.name + '!');
     updateQuestTracker();
+    console.log('✅ Игра запущена!');
 }
 
 // ============================================================
@@ -327,8 +364,10 @@ function getCurrentCache() {
 //  ИГРОВОЙ ЦИКЛ
 // ============================================================
 function loop() {
-    requestAnimationFrame(loop);
-    if(dead || !gameStarted) return;
+    if(dead || !gameStarted) {
+        requestAnimationFrame(loop);
+        return;
+    }
     
     kbUpdate();
     G.t += 0.05;
@@ -567,9 +606,16 @@ function loop() {
         document.getElementById('dead').classList.add('open');
         saveGame(true);
     }
+    
+    requestAnimationFrame(loop);
 }
 
 // ============================================================
 //  ЗАПУСК
 // ============================================================
-window.addEventListener('load', init);
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 DOM загружен');
+    init();
+});
+
+console.log('✅ main.js загружен');
