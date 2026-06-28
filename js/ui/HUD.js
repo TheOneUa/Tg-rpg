@@ -57,6 +57,58 @@ function hudUpdate(p) {
     HUD_ELEMENTS.qv[1].textContent = 'x' + p.bag.mpPot;
     HUD_ELEMENTS.qv[2].textContent = 'x' + p.bag.sword;
     HUD_ELEMENTS.qv[3].textContent = 'x' + p.bag.shield;
+    
+    // Обновляем подсказку на кнопке действия
+    updateActionButton();
+}
+
+// ============================================================
+//  ПОДСКАЗКА НА КНОПКЕ ДЕЙСТВИЯ
+// ============================================================
+function updateActionButton() {
+    const btn = document.getElementById('bp');
+    if (!btn) return;
+    
+    if (!G.p) return;
+    
+    const p = G.p;
+    const npcs = G.npcs || [];
+    const tm = getCurrentTM ? getCurrentTM() : [];
+    
+    const nearest = findNearestInteractable(p.x, p.y, tm, npcs);
+    
+    if(nearest.type) {
+        switch(nearest.type) {
+            case 'npc':
+                btn.textContent = '💬';
+                btn.style.borderColor = '#44ff88';
+                btn.style.background = 'rgba(0,90,80,.55)';
+                break;
+            case 'portal_enter':
+                btn.textContent = '⬇️';
+                btn.style.borderColor = '#ff8844';
+                btn.style.background = 'rgba(90,50,0,.55)';
+                break;
+            case 'portal_exit':
+                btn.textContent = '⬆️';
+                btn.style.borderColor = '#44ff88';
+                btn.style.background = 'rgba(0,90,50,.55)';
+                break;
+            case 'portal_deeper':
+                btn.textContent = '⬇️';
+                btn.style.borderColor = '#ff8844';
+                btn.style.background = 'rgba(90,50,0,.55)';
+                break;
+            default:
+                btn.textContent = '🌀';
+                btn.style.borderColor = 'rgba(0,195,175,.8)';
+                btn.style.background = 'rgba(0,90,80,.55)';
+        }
+    } else {
+        btn.textContent = '🌀';
+        btn.style.borderColor = 'rgba(0,195,175,.8)';
+        btn.style.background = 'rgba(0,90,80,.55)';
+    }
 }
 
 // Обработчики слотов
@@ -66,3 +118,5 @@ function hudUpdate(p) {
         tgVibrate('light');
     });
 });
+
+console.log('✅ HUD.js загружен');

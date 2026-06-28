@@ -1,7 +1,7 @@
 // ============================================================
 //  INPUT
 // ============================================================
-const inp = { dx:0, dy:0, atk:false, spell:false, useSlot:null, portal:false };
+const inp = { dx:0, dy:0, atk:false, spell:false, useSlot:null, action:false };
 const keys = {};
 
 window.addEventListener('keydown', e => {
@@ -10,10 +10,13 @@ window.addEventListener('keydown', e => {
     if(e.code === 'Digit2') inp.useSlot = 'mpPot';
     if(e.code === 'Digit3') inp.useSlot = 'sword';
     if(e.code === 'Digit4') inp.useSlot = 'shield';
-    if(e.code === 'KeyE') inp.portal = true;
+    if(e.code === 'KeyE' || e.code === 'Space') inp.action = true;
 });
 
-window.addEventListener('keyup', e => keys[e.code] = false);
+window.addEventListener('keyup', e => {
+    keys[e.code] = false;
+    if(e.code === 'KeyE' || e.code === 'Space') inp.action = false;
+});
 
 function kbUpdate() {
     if(!joyActive) {
@@ -96,10 +99,14 @@ document.getElementById('bs').addEventListener('click', () => {
 });
 
 document.getElementById('bp').addEventListener('click', () => {
-    if(G.depth === 0) {
-        openLevelDialog();
-    } else {
-        inp.portal = true;
-    }
+    inp.action = true;
     tgVibrate('light');
 });
+
+// Сброс кнопок после использования
+setInterval(() => {
+    // Сбрасываем одноразовые действия после их обработки
+    // Основной сброс происходит в main.js после обработки
+}, 100);
+
+console.log('✅ Input.js загружен');
