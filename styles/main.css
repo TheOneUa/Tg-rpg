@@ -1,623 +1,163 @@
-/* ============================================================
-   RESET & BASE
-   ============================================================ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:#0a0a0f;overflow:hidden;touch-action:none;font-family:sans-serif}
+canvas{display:block;position:fixed;top:0;left:0}
 
-html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: #111;
-    font-family: -apple-system, 'Segoe UI', sans-serif;
-    color: #fff;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-}
+/* ЭКРАН АВТОРИЗАЦИИ */
+#auth-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0a0a1a,#1a0a2a);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:20px}
+#auth-screen .logo{font-size:48px;margin-bottom:10px}
+#auth-screen h1{color:#ffd700;font-size:24px;margin-bottom:5px;text-shadow:0 0 20px rgba(255,215,0,.3)}
+#auth-screen .subtitle{color:#888;font-size:14px;margin-bottom:30px}
+#auth-screen .auth-btn{background:#5828b0;color:#fff;border:none;padding:16px 48px;border-radius:28px;font-size:18px;cursor:pointer;touch-action:manipulation;transition:transform .15s;box-shadow:0 0 30px rgba(88,40,176,.4)}
+#auth-screen .auth-btn:active{transform:scale(.95)}
+#auth-screen .auth-btn:disabled{opacity:.5}
+#auth-screen .telegram-info{color:#666;font-size:12px;margin-top:20px;text-align:center}
+#auth-screen .telegram-info .user{color:#88ff88}
+#auth-screen .version-info{color:#444;font-size:10px;margin-top:30px;letter-spacing:0.5px;font-family:monospace}
 
-/* ============================================================
-   CANVAS
-   ============================================================ */
-#canvas {
-    position: fixed;
-    top: 0; left: 0;
-    display: block;
-    z-index: 0;
-}
+/* ЭКРАН СОЗДАНИЯ */
+#create-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0a0a1a,#1a0a2a);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:20px}
+#create-screen.open{display:flex}
+#create-screen .title{color:#ffd700;font-size:22px;margin-bottom:8px}
+#create-screen .subtitle{color:#888;font-size:13px;margin-bottom:25px}
+#create-screen .input-group{width:100%;max-width:320px;margin-bottom:15px}
+#create-screen .input-group label{color:#aaa;font-size:12px;display:block;margin-bottom:5px}
+#create-screen .input-group input{width:100%;padding:12px 16px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:16px;outline:none;transition:border-color .3s}
+#create-screen .input-group input:focus{border-color:#7a40d0}
+#create-screen .input-group input::placeholder{color:#555}
+#create-screen .class-select{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:320px;margin-bottom:20px}
+#create-screen .class-btn{background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 8px;color:#888;cursor:pointer;touch-action:manipulation;transition:all .3s;text-align:center}
+#create-screen .class-btn .icon{font-size:28px;display:block;margin-bottom:4px}
+#create-screen .class-btn .name{font-size:12px;color:#aaa}
+#create-screen .class-btn.selected{border-color:#ffd700;background:rgba(255,215,0,.1);color:#ffd700}
+#create-screen .class-btn.selected .name{color:#ffd700}
+#create-screen .class-btn:active{transform:scale(.95)}
+#create-screen .btn-group{display:flex;gap:12px;width:100%;max-width:320px;flex-wrap:wrap}
+#create-screen .create-btn{background:#ffd700;color:#1a0a2a;border:none;padding:14px 24px;border-radius:28px;font-size:16px;font-weight:bold;cursor:pointer;touch-action:manipulation;transition:transform .15s;flex:1;min-width:120px}
+#create-screen .create-btn:active{transform:scale(.95)}
+#create-screen .load-btn{background:#44aa88;color:#fff;border:none;padding:14px 24px;border-radius:28px;font-size:16px;font-weight:bold;cursor:pointer;touch-action:manipulation;transition:transform .15s;flex:1;min-width:120px}
+#create-screen .load-btn:active{transform:scale(.95)}
+#create-screen .reset-btn{background:#aa4444;color:#fff;border:none;padding:14px 24px;border-radius:28px;font-size:16px;font-weight:bold;cursor:pointer;touch-action:manipulation;transition:transform .15s;flex:1;min-width:120px}
+#create-screen .reset-btn:active{transform:scale(.95)}
 
-/* ============================================================
-   ДИАЛОГИ (save-dialog, level-dialog) — скрыты по умолчанию
-   ============================================================ */
-#save-dialog,
-#level-dialog {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: rgba(0,0,0,0.75);
-    align-items: center;
-    justify-content: center;
-}
-#save-dialog.open,
-#level-dialog.open {
-    display: flex;
-}
+/* ДИАЛОГИ */
+#save-dialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1100;align-items:center;justify-content:center;padding:20px}
+#save-dialog.open{display:flex}
+#save-dialog .box{background:#12101e;border:2px solid #ffd700;border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center}
+#save-dialog .box .icon{font-size:48px;margin-bottom:10px}
+#save-dialog .box h2{color:#ffd700;font-size:20px;margin-bottom:8px}
+#save-dialog .box p{color:#aaa;font-size:13px;margin-bottom:20px;line-height:1.5}
+#save-dialog .box .btn-group{display:flex;gap:12px;flex-wrap:wrap}
+#save-dialog .box .btn-group button{padding:12px 20px;border:none;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;touch-action:manipulation;flex:1;min-width:100px;transition:transform .15s}
+#save-dialog .box .btn-group button:active{transform:scale(.95)}
+#save-dialog .box .btn-continue{background:#44aa88;color:#fff}
+#save-dialog .box .btn-new{background:#aa4444;color:#fff}
 
-.box {
-    background: linear-gradient(160deg, #1a1a2e, #16213e);
-    border: 1px solid #3a3a5c;
-    border-radius: 16px;
-    padding: 24px 28px;
-    max-width: 320px;
-    width: 90%;
-    text-align: center;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-}
+#level-dialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1100;align-items:center;justify-content:center;padding:20px}
+#level-dialog.open{display:flex}
+#level-dialog .box{background:#12101e;border:2px solid #44ff88;border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center}
+#level-dialog .box .icon{font-size:48px;margin-bottom:10px}
+#level-dialog .box h2{color:#44ff88;font-size:20px;margin-bottom:8px}
+#level-dialog .box p{color:#aaa;font-size:13px;margin-bottom:15px;line-height:1.5}
+#level-dialog .box .level-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:15px}
+#level-dialog .box .level-btn{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 16px;color:#fff;font-size:14px;cursor:pointer;touch-action:manipulation;transition:all .3s;min-width:50px}
+#level-dialog .box .level-btn:active{transform:scale(.92)}
+#level-dialog .box .level-btn.locked{opacity:.3;cursor:not-allowed}
+#level-dialog .box .level-btn.locked::after{content:' 🔒'}
+#level-dialog .box .level-btn.selected{border-color:#ffd700;background:rgba(255,215,0,.15);color:#ffd700}
+#level-dialog .box .level-btn .cost{display:block;font-size:9px;color:#ffd700}
+#level-dialog .box .btn-group{display:flex;gap:12px;flex-wrap:wrap}
+#level-dialog .box .btn-group button{padding:12px 20px;border:none;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;touch-action:manipulation;flex:1;min-width:100px;transition:transform .15s}
+#level-dialog .box .btn-group button:active{transform:scale(.95)}
+#level-dialog .box .btn-enter{background:#44aa88;color:#fff}
+#level-dialog .box .btn-enter:disabled{opacity:.4;cursor:not-allowed}
+#level-dialog .box .btn-cancel{background:#444;color:#fff}
 
-.box .icon { font-size: 40px; margin-bottom: 8px; }
-.box h2 { font-size: 20px; margin-bottom: 8px; color: #ffd700; }
-.box p { font-size: 13px; color: #aaa; margin-bottom: 16px; line-height: 1.5; }
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;height:58px;background:rgba(8,6,18,.95);border-bottom:2px solid #5a20a0;display:none;align-items:center;padding:0 8px;gap:4px;z-index:50;pointer-events:none}
+#hud.open{display:flex}
+.hb{display:flex;flex-direction:column;gap:2px}
+.hr{display:flex;align-items:center;gap:4px;font-size:9px;color:#fff}
+.hl{width:18px;font-size:8px;color:#aaa}
+.bar{width:72px;height:7px;border-radius:2px;background:#1a1a2a;overflow:hidden}
+.fill{height:100%;border-radius:2px}
+.sep{width:1px;height:36px;background:rgba(255,255,255,.12);margin:0 2px}
+.st{font-size:10px;color:#ddd;white-space:nowrap}
+#s-gold{color:#ffd700;font-weight:bold}
+#s-loc{color:#00b4a0;font-size:9px}
+#s-depth{color:#ff8844;font-size:9px;font-weight:bold}
+#s-save{color:#888;font-size:8px}
+#s-quests{color:#88ff88;font-size:9px;cursor:pointer;pointer-events:all}
+#s-ach{color:#ffaa44;font-size:9px;cursor:pointer;pointer-events:all}
+#s-maxdepth{color:#ff8844;font-size:8px}
 
-.btn-group {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 12px;
-}
+/* Трекер квеста */
+#quest-tracker{position:fixed;top:62px;right:8px;background:rgba(0,0,0,.85);border:1px solid #44aa44;border-radius:8px;padding:4px 10px;z-index:55;font-size:10px;color:#88ff88;display:none;max-width:200px;text-align:right;pointer-events:none}
+#qt-name{font-weight:bold;color:#aaffaa}
+#qt-progress{color:#88dd88}
 
-.btn-group button {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity .15s;
-}
-.btn-group button:active { opacity: 0.7; }
+/* Слоты */
+#quickbar{position:fixed;bottom:152px;left:50%;transform:translateX(-50%);display:none;gap:6px;z-index:50}
+#quickbar.open{display:flex}
+.qsl{width:54px;height:54px;border-radius:10px;border:2px solid rgba(255,255,255,.2);background:rgba(10,8,20,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;touch-action:manipulation;user-select:none;position:relative}
+.qsl:active{opacity:.6;transform:scale(.92)}
+.qsl-icon{font-size:20px;line-height:1}
+.qsl-val{font-size:9px;color:#ffd700;margin-top:1px;font-weight:bold}
+.qsl-label{font-size:7px;color:#aaa;margin-top:1px}
+#qs0{border-color:rgba(200,50,50,.7)}
+#qs1{border-color:rgba(60,120,220,.7)}
+#qs2{border-color:rgba(150,145,140,.7)}
+#qs3{border-color:rgba(128,144,160,.7)}
+.qsl-cooldown{position:absolute;inset:0;border-radius:10px;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:14px;color:#ff8844;font-weight:bold;pointer-events:none;opacity:0}
 
-.btn-continue, .btn-enter { background: #3c78dc; color: #fff; }
-.btn-new, .btn-cancel    { background: #333; color: #ccc; }
+/* Джойстик */
+#ctrl{position:fixed;bottom:0;left:0;right:0;height:148px;display:none;align-items:flex-end;justify-content:space-between;padding:0 14px calc(10px + env(safe-area-inset-bottom));pointer-events:none;z-index:100}
+#ctrl.open{display:flex}
+#joy{width:116px;height:116px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.18);position:relative;pointer-events:all;touch-action:none;flex-shrink:0}
+#knob{width:46px;height:46px;border-radius:50%;background:rgba(140,90,255,.75);border:2px solid rgba(190,150,255,.9);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 14px rgba(140,90,255,.5);pointer-events:none;transition:transform .05s}
+#btns{display:flex;flex-direction:row;gap:8px;pointer-events:all;align-items:flex-end}
+#btns button{pointer-events:all !important;touch-action:manipulation !important}
+.ab{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.5);color:#fff;font-size:22px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;user-select:none;transition:transform .1s;pointer-events:all !important}
+.ab:active{opacity:.45;transform:scale(.88)}
+#ba{border-color:rgba(255,70,70,.8);background:rgba(150,15,15,.55)}
+#bs{border-color:rgba(70,110,255,.8);background:rgba(15,35,170,.55)}
+#bp{border-color:rgba(0,195,175,.8);background:rgba(0,90,80,.55);font-size:16px}
 
-/* Level list */
-.level-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    max-height: 180px;
-    overflow-y: auto;
-    margin: 12px 0;
-    padding: 4px;
-}
-.level-btn {
-    padding: 8px 14px;
-    border: 1px solid #3a3a5c;
-    border-radius: 8px;
-    background: #1e2a40;
-    color: #ddd;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    min-width: 60px;
-    transition: background .15s;
-}
-.level-btn:active { background: #2a3a55; }
-.level-btn.selected { background: #3c78dc; border-color: #6699ff; color: #fff; }
-.level-btn.locked { opacity: 0.4; cursor: default; }
-.level-btn .cost { font-size: 10px; color: #ffd700; }
+/* Модальное окно */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;align-items:center;justify-content:center}
+#modal.open{display:flex}
+#mbox{background:#12101e;border:2px solid #7a40d0;border-radius:16px;width:min(370px,96vw);max-height:82vh;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
+#mtitle{font-size:17px;font-weight:bold;color:#ffd700;text-align:center}
+#msub{font-size:11px;color:#aaa;text-align:center;min-height:16px}
+.mitem{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px}
+.micon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.minfo{flex:1;min-width:0}
+.mname{font-size:12px;color:#fff;font-weight:bold}
+.mdesc{font-size:10px;color:#aaa;margin-top:1px}
+.mprice{font-size:10px;color:#ffd700;margin-top:2px}
+.mbtn{padding:7px 12px;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:bold;flex-shrink:0;touch-action:manipulation}
+.mbtn.buy{background:#5828b0;color:#fff}
+.mbtn.qact{background:#206030;color:#fff}
+.mbtn.qdone{background:#805010;color:#ffe}
+.mbtn.qclaim{background:#303030;color:#888}
+.mbtn.ach{background:#805020;color:#ffe}
+#mclose{padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:13px;cursor:pointer;text-align:center;touch-action:manipulation}
 
-/* ============================================================
-   ЭКРАН АВТОРИЗАЦИИ
-   ============================================================ */
-#auth-screen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 90;
-    background: linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 100%);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    text-align: center;
-    padding: 32px;
-}
-#auth-screen.open { display: flex; }
+/* Смерть */
+#dead{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);color:#fff;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:18px}
+#dead.open{display:flex}
+#dead h1{font-size:36px;color:#e03030;text-shadow:0 0 28px #f00}
+#dead p{font-size:15px;color:#aaa}
+#rbtn{padding:12px 34px;background:#5828b0;border:none;border-radius:28px;color:#fff;font-size:16px;cursor:pointer;touch-action:manipulation;transition:transform .15s}
+#rbtn:active{transform:scale(.92)}
 
-#auth-screen .logo { font-size: 64px; margin-bottom: 4px; }
-#auth-screen h1 { font-size: 36px; font-weight: 800; color: #ffd700; letter-spacing: 2px; }
-#auth-screen .subtitle { font-size: 14px; color: #888; margin-bottom: 16px; }
-.auth-btn {
-    padding: 14px 32px;
-    background: linear-gradient(135deg, #2196f3, #1565c0);
-    color: #fff;
-    border: none;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(33,150,243,0.4);
-    transition: transform .1s;
-}
-.auth-btn:active { transform: scale(0.96); }
-.telegram-info { font-size: 12px; color: #555; margin-top: 4px; }
-.telegram-info .user { color: #aaa; font-weight: 600; margin-top: 2px; }
-.version-info { font-size: 11px; color: #333; margin-top: 8px; }
+/* Уведомления */
+#qnotif{position:fixed;top:62px;left:50%;transform:translateX(-50%);background:rgba(20,40,20,.92);border:1px solid #44aa44;border-radius:10px;padding:7px 14px;font-size:11px;color:#88ff88;z-index:60;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
+#qnotif.show{opacity:1}
 
-/* ============================================================
-   ЭКРАН СОЗДАНИЯ ПЕРСОНАЖА
-   ============================================================ */
-#create-screen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 90;
-    background: linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 100%);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    padding: 32px;
-    overflow-y: auto;
-}
-#create-screen.open { display: flex; }
+/* Затемнение */
+#fade-overlay{position:fixed;inset:0;background:#000;z-index:9998;pointer-events:none;opacity:0;transition:opacity .4s}
+#fade-overlay.active{opacity:1}
 
-#create-screen .title { font-size: 22px; font-weight: 700; color: #ffd700; }
-#create-screen .subtitle { font-size: 13px; color: #888; }
-
-.input-group { width: 100%; max-width: 300px; }
-.input-group label { font-size: 12px; color: #aaa; display: block; margin-bottom: 6px; }
-.input-group input {
-    width: 100%;
-    padding: 12px 14px;
-    background: #1e1e30;
-    border: 1px solid #3a3a5c;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 15px;
-    outline: none;
-}
-.input-group input:focus { border-color: #3c78dc; }
-
-.class-select {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-.class-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 16px;
-    background: #1e1e30;
-    border: 2px solid #3a3a5c;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-    min-width: 80px;
-}
-.class-btn .icon { font-size: 28px; }
-.class-btn .name { font-size: 12px; color: #ccc; font-weight: 600; }
-.class-btn.selected {
-    border-color: #ffd700;
-    background: rgba(255,215,0,0.1);
-}
-
-.create-btn {
-    padding: 14px 36px;
-    background: linear-gradient(135deg, #ffd700, #ff8800);
-    color: #111;
-    border: none;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: transform .1s;
-}
-.create-btn:active { transform: scale(0.96); }
-
-.load-btn {
-    padding: 12px 28px;
-    background: #3c78dc;
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-}
-.reset-btn {
-    padding: 10px 20px;
-    background: #3a1a1a;
-    color: #ff8888;
-    border: 1px solid #5a2a2a;
-    border-radius: 10px;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-/* ============================================================
-   HUD
-   ============================================================ */
-#hud {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 10;
-    height: 58px;
-    background: rgba(0,0,0,0.82);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    padding: 4px 8px;
-    flex-direction: column;
-    gap: 2px;
-}
-#hud.open { display: flex; }
-
-.hb { display: flex; align-items: center; gap: 6px; }
-.sep { width: 1px; height: 12px; background: rgba(255,255,255,0.1); margin: 0 2px; display: none; }
-
-.hr {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex: 1;
-}
-.hl {
-    font-size: 9px;
-    color: #888;
-    font-weight: 700;
-    min-width: 16px;
-}
-.bar {
-    flex: 1;
-    height: 7px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width .2s;
-}
-
-.st {
-    font-size: 10px;
-    color: #ccc;
-    background: rgba(255,255,255,0.05);
-    padding: 2px 6px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-.st:active { background: rgba(255,255,255,0.12); }
-
-/* ============================================================
-   QUEST TRACKER
-   ============================================================ */
-#quest-tracker {
-    display: none;
-    position: fixed;
-    top: 62px;
-    right: 8px;
-    z-index: 10;
-    background: rgba(0,0,0,0.7);
-    border: 1px solid rgba(255,200,50,0.3);
-    border-radius: 8px;
-    padding: 4px 10px;
-    font-size: 10px;
-    color: #ffd700;
-    max-width: 160px;
-}
-#quest-tracker.active { display: block; }
-#qt-name { font-weight: 700; margin-bottom: 2px; }
-#qt-progress { color: #aaa; }
-
-/* ============================================================
-   QUICKBAR (слоты предметов)
-   ============================================================ */
-#quickbar {
-    display: none;
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    gap: 8px;
-}
-#quickbar.open { display: flex; }
-
-.qsl {
-    position: relative;
-    width: 56px;
-    height: 56px;
-    background: rgba(0,0,0,0.7);
-    border: 2px solid rgba(255,255,255,0.15);
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: border-color .15s;
-}
-.qsl:active { border-color: #ffd700; background: rgba(255,215,0,0.1); }
-.qsl-icon { font-size: 22px; line-height: 1; }
-.qsl-val { font-size: 10px; color: #ffd700; font-weight: 700; }
-.qsl-label { font-size: 9px; color: #666; }
-.qsl-cooldown {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.6);
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #fff;
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* ============================================================
-   CONTROLS (joystick + buttons)
-   ============================================================ */
-#ctrl {
-    display: none;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 152px;
-    z-index: 10;
-    padding: 12px 20px;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(0,0,0,0.5);
-    border-top: 1px solid rgba(255,255,255,0.06);
-}
-#ctrl.open { display: flex; }
-
-#joy {
-    width: 100px;
-    height: 100px;
-    background: rgba(255,255,255,0.06);
-    border: 2px solid rgba(255,255,255,0.15);
-    border-radius: 50%;
-    position: relative;
-    touch-action: none;
-    flex-shrink: 0;
-}
-#knob {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 44px;
-    height: 44px;
-    background: rgba(255,255,255,0.25);
-    border: 2px solid rgba(255,255,255,0.4);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-#btns {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-}
-.ab {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.2);
-    background: rgba(0,0,0,0.6);
-    font-size: 24px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform .1s, background .1s;
-    -webkit-tap-highlight-color: transparent;
-}
-.ab:active { transform: scale(0.88); background: rgba(255,255,255,0.15); }
-
-/* ============================================================
-   MODAL
-   ============================================================ */
-#modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: rgba(0,0,0,0.8);
-    align-items: flex-end;
-    justify-content: center;
-}
-#modal.open { display: flex; }
-
-#mbox {
-    width: 100%;
-    max-width: 480px;
-    max-height: 70vh;
-    background: #16213e;
-    border-radius: 20px 20px 0 0;
-    padding: 20px 20px 32px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-#mtitle {
-    font-size: 18px;
-    font-weight: 700;
-    color: #ffd700;
-    margin-bottom: 4px;
-}
-#msub {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 14px;
-}
-#mbody {
-    overflow-y: auto;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-#mclose {
-    margin-top: 16px;
-    text-align: center;
-    padding: 12px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 10px;
-    font-size: 14px;
-    color: #aaa;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-#mclose:active { background: rgba(255,255,255,0.12); }
-
-/* Modal items (достижения, квесты, магазин) */
-.mitem {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    padding: 10px 12px;
-}
-.micon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
-}
-.minfo { flex: 1; min-width: 0; }
-.mname { font-size: 13px; font-weight: 600; color: #ddd; }
-.mdesc { font-size: 11px; color: #888; margin-top: 2px; }
-.mbuy {
-    padding: 8px 14px;
-    background: linear-gradient(135deg, #ffd700, #ff8800);
-    color: #111;
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.mbuy:active { opacity: 0.8; }
-.mbuy:disabled { background: #333; color: #666; }
-
-/* ============================================================
-   УВЕДОМЛЕНИЯ
-   ============================================================ */
-#qnotif {
-    position: fixed;
-    top: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 300;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    pointer-events: none;
-}
-.qn {
-    background: rgba(0,0,0,0.85);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 13px;
-    color: #fff;
-    white-space: nowrap;
-    animation: qnFade 2.5s forwards;
-}
-@keyframes qnFade {
-    0%   { opacity: 0; transform: translateY(-8px); }
-    15%  { opacity: 1; transform: translateY(0); }
-    70%  { opacity: 1; }
-    100% { opacity: 0; }
-}
-
-/* ============================================================
-   ИНДИКАТОР СОХРАНЕНИЯ
-   ============================================================ */
-#save-indicator {
-    position: fixed;
-    bottom: 160px;
-    right: 12px;
-    z-index: 50;
-    background: rgba(0,0,0,0.7);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    padding: 4px 10px;
-    font-size: 11px;
-    color: #aaa;
-    opacity: 0;
-    transition: opacity .3s;
-    pointer-events: none;
-}
-#save-indicator.show { opacity: 1; }
-
-/* ============================================================
-   СМЕРТЬ
-   ============================================================ */
-#dead {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 400;
-    background: rgba(0,0,0,0.9);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    text-align: center;
-    padding: 32px;
-}
-#dead.open { display: flex; }
-#dead h1 { font-size: 32px; color: #ff4444; }
-#dead p { font-size: 14px; color: #888; }
-#rbtn {
-    padding: 14px 32px;
-    background: #c83232;
-    color: #fff;
-    border: none;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 8px;
-}
-#rbtn:active { opacity: 0.8; }
-
-/* ============================================================
-   FADE OVERLAY
-   ============================================================ */
-#fade-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 500;
-    background: #000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.4s;
-}
-#fade-overlay.active {
-    opacity: 1;
-    pointer-events: all;
-}
+/* Индикатор сохранения */
+#save-indicator{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#88ff88;padding:6px 16px;border-radius:20px;font-size:12px;z-index:70;pointer-events:none;opacity:0;transition:opacity .3s;border:1px solid #44aa44}
+#save-indicator.show{opacity:1}
