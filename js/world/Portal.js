@@ -34,3 +34,23 @@ function drawPortal(cx, cy, pos, t, col, label, icon) {
         ctx.fillText(icon, px, py + 6*SC);
     }
 }
+
+// Поиск порталов на карте (для взаимодействия)
+function findPortalsInDungeon(grid) {
+    const portals = { entry: null, exit: null };
+    if(!grid) return portals;
+    
+    for(let y=0; y<grid.length; y++) {
+        for(let x=0; x<grid[0].length; x++) {
+            if(grid[y][x] === T_ENTRANCE) {
+                portals.entry = { x: x * CFG.TILE + CFG.TILE/2, y: y * CFG.TILE + CFG.TILE/2 };
+            }
+            if(grid[y][x] === T_EXIT) {
+                portals.exit = { x: x * CFG.TILE + CFG.TILE/2, y: y * CFG.TILE + CFG.TILE/2 };
+            }
+        }
+    }
+    return portals;
+}
+
+console.log('✅ Portal.js загружен');
