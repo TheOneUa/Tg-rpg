@@ -1,0 +1,34 @@
+tg-rpg/
+├── index.html
+├── styles/
+│   └── main.css
+├── js/
+│   ├── main.js
+│   ├── config.js
+│   ├── core/
+│   │   ├── Player.js
+│   │   ├── Enemy.js
+│   │   ├── Item.js
+│   │   ├── NPC.js
+│   │   ├── Particle.js
+│   │   └── FText.js
+│   ├── world/
+│   │   ├── Village.js
+│   │   ├── Dungeon.js
+│   │   └── Portal.js
+│   ├── systems/
+│   │   ├── Achievements.js
+│   │   ├── Quests.js
+│   │   ├── Shop.js
+│   │   └── Save.js
+│   ├── ui/
+│   │   ├── HUD.js
+│   │   ├── Modal.js
+│   │   └── Input.js
+│   ├── telegram/
+│   │   ├── Auth.js
+│   │   └── Haptic.js
+│   └── utils/
+│       └── Canvas.js
+└── assets/
+    └── (пусто, для будущей графики)
