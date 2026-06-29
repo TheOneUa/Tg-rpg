@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>⚔️ TG-RPG v5.0.2</title>
+    <title>⚔️ TG-RPG v5.0.3</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -50,7 +50,76 @@
         <span class="btn-text">Удалить сохранение</span>
     </button>
 
-    <div class="menu-version" id="menu-version">v5.0.1</div>
+    <button class="menu-btn menu-btn-settings" id="menu-settings">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-text">Настройки<span class="btn-sub">Звук и вибрация</span></span>
+    </button>
+
+    <div class="menu-version" id="menu-version">v5.0.2</div>
+</div>
+
+<!-- ЭКРАН НАСТРОЕК -->
+<div id="settings-screen">
+    <div class="settings-header">
+        <button id="settings-back" class="settings-back-btn">← Назад</button>
+        <div class="settings-title">⚙️ Настройки</div>
+    </div>
+
+    <div class="settings-body">
+
+        <div class="settings-section-title">🔊 Звук</div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-label-icon">🔈</span>
+                <span>Громкость</span>
+            </div>
+            <div class="settings-control">
+                <span class="slider-val" id="vol-val">80%</span>
+                <input type="range" id="vol-slider" min="0" max="100" value="80" class="settings-slider">
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-label-icon" id="sound-toggle-icon">🔔</span>
+                <span>Звук</span>
+            </div>
+            <div class="settings-control">
+                <button class="toggle-btn active" id="sound-toggle">ВКЛ</button>
+            </div>
+        </div>
+
+        <div class="settings-divider"></div>
+        <div class="settings-section-title">📳 Вибрация</div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-label-icon">📳</span>
+                <span>Вибрация</span>
+            </div>
+            <div class="settings-control">
+                <button class="toggle-btn active" id="vibro-toggle">ВКЛ</button>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-label-icon">💪</span>
+                <span>Интенсивность</span>
+            </div>
+            <div class="settings-control">
+                <div class="vibro-levels" id="vibro-levels">
+                    <button class="vibro-lvl" data-level="light">Слабая</button>
+                    <button class="vibro-lvl active" data-level="medium">Средняя</button>
+                    <button class="vibro-lvl" data-level="heavy">Сильная</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="settings-test-btn" id="settings-test">🔊 Тест звука и вибрации</button>
+
+    </div>
 </div>
 
 <!-- ДИАЛОГ СОХРАНЕНИЯ -->
