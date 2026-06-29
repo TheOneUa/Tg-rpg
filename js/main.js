@@ -350,7 +350,6 @@ function startGame(loaded) {
     gameStarted = true;
     document.getElementById('create-screen').classList.remove('open');
     document.getElementById('hud').classList.add('open');
-    document.getElementById('quickbar').classList.add('open');
     document.getElementById('ctrl').classList.add('open');
     
     setInterval(() => {
@@ -448,43 +447,74 @@ function loop() {
     const npcs = G.npcs;
     const p = G.p;
     
-    // Портал
-    if(inp.portal && !document.getElementById('level-dialog').classList.contains('open')) {
-        inp.portal = false;
-        if(G.depth > 0) {
-            let onEntry = false, onDown = false;
-            for(let y=0; y<CFG.D_ROWS && !onEntry; y++) {
-                for(let x=0; x<CFG.D_COLS && !onEntry; x++) {
-                    if(tm[y][x] === T_ENTRANCE) {
-                        const ex = x*CFG.TILE + CFG.TILE/2;
-                        const ey = y*CFG.TILE + CFG.TILE/2;
-                        if(Math.hypot(p.x - ex, p.y - ey) < CFG.TILE * 2) onEntry = true;
-                    }
+    // ── Контекстная кнопка ──
+    const ctxBtn = document.getElementById('ctx-btn');
+    let ctxMode = null; // 'npc', 'portal', 'exit', 'descend', 'enter-dungeon'
+    let ctxNpc = null;
+
+    if(G.depth === 0) {
+        // Деревня: проверяем NPC
+        for(const npc of G.npcs) {
+            if(Math.hypot(p.x - npc.x, p.y - npc.y) < CFG.TILE * 1.5) {
+                ctxMode = 'npc';
+                ctxNpc = npc;
+                break;
+            }
+        }
+        // Портал в подземелье
+        if(!ctxMode && Math.hypot(p.x - PORTAL_POS.x, p.y - PORTAL_POS.y) < CFG.TILE * 1.5) {
+            ctxMode = 'enter-dungeon';
+        }
+    } else {
+        // Подземелье: вход (выход наверх)
+        for(let y=0; y<CFG.D_ROWS; y++) {
+            for(let x=0; x<CFG.D_COLS; x++) {
+                if(tm[y][x] === T_ENTRANCE) {
+                    const ex = x*CFG.TILE + CFG.TILE/2, ey = y*CFG.TILE + CFG.TILE/2;
+                    if(Math.hypot(p.x - ex, p.y - ey) < CFG.TILE * 1.5) ctxMode = 'exit';
                 }
             }
-            if(G.dungeonDown) {
-                const dx = G.dungeonDown.x * CFG.TILE + CFG.TILE/2;
-                const dy = G.dungeonDown.y * CFG.TILE + CFG.TILE/2;
-                if(Math.hypot(p.x - dx, p.y - dy) < CFG.TILE * 2) onDown = true;
-            }
-            if(onEntry) fadeTransition(() => exitDungeon());
-            else if(onDown) {
-                const nextDepth = G.depth + 1;
-                fadeTransition(() => enterDungeon(nextDepth));
-            }
-        } else {
-            // В деревне — проверяем NPC или открываем выбор уровня
-            let npcTalked = false;
-            for(const npc of G.npcs) {
-                if(Math.hypot(p.x - npc.x, p.y - npc.y) < CFG.TILE * 2.5) {
-                    npc.talk();
-                    npcTalked = true;
-                    break;
-                }
-            }
-            if(!npcTalked) openLevelDialog();
+        }
+        // Спуск вниз
+        if(!ctxMode && G.dungeonDown) {
+            const dx = G.dungeonDown.x*CFG.TILE + CFG.TILE/2;
+            const dy = G.dungeonDown.y*CFG.TILE + CFG.TILE/2;
+            if(Math.hypot(p.x - dx, p.y - dy) < CFG.TILE * 1.5) ctxMode = 'descend';
         }
     }
+
+    // Обновляем вид кнопки
+    if(ctxMode === 'npc') {
+        ctxBtn.className = 'npc visible';
+        ctxBtn.innerHTML = '💬 ' + ctxNpc.name;
+    } else if(ctxMode === 'enter-dungeon') {
+        ctxBtn.className = 'portal visible';
+        ctxBtn.innerHTML = '⚔️ Подземелье';
+    } else if(ctxMode === 'exit') {
+        ctxBtn.className = 'exit visible';
+        ctxBtn.innerHTML = '🌿 Выйти';
+    } else if(ctxMode === 'descend') {
+        ctxBtn.className = 'portal visible';
+        ctxBtn.innerHTML = '⬇️ Глубже';
+    } else {
+        ctxBtn.className = '';
+    }
+
+    // Обработка нажатия
+    if(inp.ctx && !document.getElementById('level-dialog').classList.contains('open')) {
+        inp.ctx = false;
+        if(ctxMode === 'npc' && ctxNpc) {
+            ctxNpc.talk();
+        } else if(ctxMode === 'enter-dungeon') {
+            openLevelDialog();
+        } else if(ctxMode === 'exit') {
+            fadeTransition(() => exitDungeon());
+        } else if(ctxMode === 'descend') {
+            fadeTransition(() => enterDungeon(G.depth + 1));
+        }
+    }
+    // Сброс старого inp.portal на всякий случай
+    inp.portal = false;
     
     // Обновление игрока
     p.update(inp, tm, enemies, items, G.parts, G.floats, G.projs, npcs);

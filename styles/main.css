@@ -321,25 +321,35 @@ html, body {
 #qt-progress { color: #aaa; }
 
 /* ============================================================
-   QUICKBAR (слоты предметов)
+   CONTROLS — общий контейнер внизу
    ============================================================ */
-#quickbar {
+#ctrl {
     display: none;
     position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 0; left: 0; right: 0;
     z-index: 10;
-    gap: 8px;
+    background: rgba(0,0,0,0.55);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-#quickbar.open { display: flex; }
+#ctrl.open { display: flex; }
+
+/* ── Верхняя строка: инвентарь ── */
+#quickbar {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
 
 .qsl {
     position: relative;
-    width: 56px;
-    height: 56px;
-    background: rgba(0,0,0,0.7);
-    border: 2px solid rgba(255,255,255,0.15);
+    width: 52px;
+    height: 52px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid rgba(255,255,255,0.12);
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -347,18 +357,19 @@ html, body {
     justify-content: center;
     cursor: pointer;
     transition: border-color .15s;
+    flex-shrink: 0;
 }
 .qsl:active { border-color: #ffd700; background: rgba(255,215,0,0.1); }
-.qsl-icon { font-size: 22px; line-height: 1; }
+.qsl-icon { font-size: 20px; line-height: 1; }
 .qsl-val { font-size: 10px; color: #ffd700; font-weight: 700; }
-.qsl-label { font-size: 9px; color: #666; }
+.qsl-label { font-size: 8px; color: #555; }
 .qsl-cooldown {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.65);
     border-radius: 8px;
     font-size: 11px;
     font-weight: 700;
@@ -367,28 +378,20 @@ html, body {
     pointer-events: none;
 }
 
-/* ============================================================
-   CONTROLS (joystick + buttons)
-   ============================================================ */
-#ctrl {
-    display: none;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 152px;
-    z-index: 10;
-    padding: 12px 20px;
+/* ── Нижняя строка: джойстик + кнопки ── */
+#ctrl-bottom {
+    display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(0,0,0,0.5);
-    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 8px 20px 12px;
+    gap: 12px;
 }
-#ctrl.open { display: flex; }
 
 #joy {
-    width: 100px;
-    height: 100px;
+    width: 96px;
+    height: 96px;
     background: rgba(255,255,255,0.06);
-    border: 2px solid rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.14);
     border-radius: 50%;
     position: relative;
     touch-action: none;
@@ -398,26 +401,36 @@ html, body {
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 44px;
-    height: 44px;
-    background: rgba(255,255,255,0.25);
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.22);
     border: 2px solid rgba(255,255,255,0.4);
     border-radius: 50%;
     pointer-events: none;
 }
 
+/* ── Правая группа: кнопки атаки + контекстная ── */
 #btns {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    align-items: center;
+    gap: 8px;
+    align-items: flex-end;
+    flex: 1;
 }
+
+/* Атака + магия — горизонтально */
+#btns-combat {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
 .ab {
-    width: 60px;
-    height: 60px;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.2);
-    background: rgba(0,0,0,0.6);
+    border: 2px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.65);
     font-size: 24px;
     cursor: pointer;
     display: flex;
@@ -425,8 +438,34 @@ html, body {
     justify-content: center;
     transition: transform .1s, background .1s;
     -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
 }
-.ab:active { transform: scale(0.88); background: rgba(255,255,255,0.15); }
+.ab:active { transform: scale(0.88); background: rgba(255,255,255,0.14); }
+#ba { border-color: rgba(255,100,100,0.4); }
+#bs { border-color: rgba(100,150,255,0.4); }
+
+/* Контекстная кнопка (портал / NPC) */
+#ctx-btn {
+    display: none;
+    width: 100%;
+    padding: 9px 14px;
+    border-radius: 12px;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform .1s, opacity .1s;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+}
+#ctx-btn.visible { display: flex; }
+#ctx-btn:active { transform: scale(0.95); opacity: 0.8; }
+#ctx-btn.portal  { background: linear-gradient(135deg,#ff8844,#cc4400); color:#fff; }
+#ctx-btn.npc     { background: linear-gradient(135deg,#44aaff,#0066cc); color:#fff; }
+#ctx-btn.exit    { background: linear-gradient(135deg,#44ff88,#00884a); color:#111; }
 
 /* ============================================================
    MODAL

@@ -1,7 +1,7 @@
 // ============================================================
 //  INPUT
 // ============================================================
-const inp = { dx:0, dy:0, atk:false, spell:false, useSlot:null, portal:false };
+const inp = { dx:0, dy:0, atk:false, spell:false, useSlot:null, portal:false, ctx:false };
 const keys = {};
 
 window.addEventListener('keydown', e => {
@@ -10,7 +10,7 @@ window.addEventListener('keydown', e => {
     if(e.code === 'Digit2') inp.useSlot = 'mpPot';
     if(e.code === 'Digit3') inp.useSlot = 'sword';
     if(e.code === 'Digit4') inp.useSlot = 'shield';
-    if(e.code === 'KeyE') inp.portal = true;
+    if(e.code === 'KeyE') inp.ctx = true;
 });
 
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -95,11 +95,8 @@ document.getElementById('bs').addEventListener('click', () => {
     tgVibrate('light');
 });
 
-document.getElementById('bp').addEventListener('click', () => {
-    if(G.depth === 0) {
-        openLevelDialog();
-    } else {
-        inp.portal = true;
-    }
-    tgVibrate('light');
+// Контекстная кнопка — действие определяется из main.js
+document.getElementById('ctx-btn').addEventListener('click', () => {
+    inp.ctx = true;
+    tgVibrate('medium');
 });

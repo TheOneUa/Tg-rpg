@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>⚔️ TG-RPG v5.0.1</title>
+    <title>⚔️ TG-RPG v5.0.2</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -143,21 +143,25 @@
 <!-- Трекер квеста -->
 <div id="quest-tracker"><div id="qt-name"></div><div id="qt-progress"></div></div>
 
-<!-- Слоты -->
-<div id="quickbar">
-    <div class="qsl" id="qs0"><div class="qsl-icon">🧪</div><div class="qsl-val" id="qv0">0</div><div class="qsl-label">HP</div><div class="qsl-cooldown" id="cd0"></div></div>
-    <div class="qsl" id="qs1"><div class="qsl-icon">💧</div><div class="qsl-val" id="qv1">0</div><div class="qsl-label">MP</div><div class="qsl-cooldown" id="cd1"></div></div>
-    <div class="qsl" id="qs2"><div class="qsl-icon">⚔️</div><div class="qsl-val" id="qv2">0</div><div class="qsl-label">Меч</div><div class="qsl-cooldown" id="cd2"></div></div>
-    <div class="qsl" id="qs3"><div class="qsl-icon">🛡️</div><div class="qsl-val" id="qv3">0</div><div class="qsl-label">Щит</div><div class="qsl-cooldown" id="cd3"></div></div>
-</div>
-
-<!-- Джойстик -->
+<!-- Управление: инвентарь + джойстик + кнопки -->
 <div id="ctrl">
-    <div id="joy"><div id="knob"></div></div>
-    <div id="btns">
-        <button class="ab" id="ba">⚔️</button>
-        <button class="ab" id="bs">🔥</button>
-        <button class="ab" id="bp">🌀</button>
+    <!-- Строка инвентаря -->
+    <div id="quickbar">
+        <div class="qsl" id="qs0"><div class="qsl-icon">🧪</div><div class="qsl-val" id="qv0">0</div><div class="qsl-label">HP</div><div class="qsl-cooldown" id="cd0"></div></div>
+        <div class="qsl" id="qs1"><div class="qsl-icon">💧</div><div class="qsl-val" id="qv1">0</div><div class="qsl-label">MP</div><div class="qsl-cooldown" id="cd1"></div></div>
+        <div class="qsl" id="qs2"><div class="qsl-icon">⚔️</div><div class="qsl-val" id="qv2">0</div><div class="qsl-label">Меч</div><div class="qsl-cooldown" id="cd2"></div></div>
+        <div class="qsl" id="qs3"><div class="qsl-icon">🛡️</div><div class="qsl-val" id="qv3">0</div><div class="qsl-label">Щит</div><div class="qsl-cooldown" id="cd3"></div></div>
+    </div>
+    <!-- Джойстик + кнопки -->
+    <div id="ctrl-bottom">
+        <div id="joy"><div id="knob"></div></div>
+        <div id="btns">
+            <div id="btns-combat">
+                <button class="ab" id="ba">⚔️</button>
+                <button class="ab" id="bs">🔥</button>
+            </div>
+            <button id="ctx-btn"></button>
+        </div>
     </div>
 </div>
 
