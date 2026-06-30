@@ -9,8 +9,8 @@
 // O = дверь дома (вход, контекстная кнопка "Войти")
 const VILLAGE_RAW = [
     "TTTTTTTTTTTTT",
-    "THHOTTTTHHOTT",
     "THHHTTTTHHHTT",
+    "THHOTTTTHOHTT",
     "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
