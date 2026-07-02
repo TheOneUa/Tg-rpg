@@ -1032,3 +1032,81 @@ html, body {
     from { transform: scale(1); }
     to { transform: scale(1.06); }
 }
+
+/* ============================================================
+   ПРЕВЬЮ КЛАССА НА ЭКРАНЕ СОЗДАНИЯ
+   ============================================================ */
+.class-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 0 8px;
+}
+#preview-canvas {
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,215,0,0.2);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+.class-preview-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffd700;
+}
+.class-preview-stats {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   КНОПКА ПАУЗЫ (в игре, поверх всего)
+   ============================================================ */
+#pause-btn {
+    position: fixed;
+    top: 62px;
+    right: 8px;
+    z-index: 50;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.6);
+    color: #aaa;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .15s;
+}
+#pause-btn.visible { display: flex; }
+#pause-btn:active  { background: rgba(255,255,255,0.12); }
+
+/* ============================================================
+   ЭКРАН ПАУЗЫ
+   ============================================================ */
+#pause-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    background: rgba(0,0,0,0.82);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 40px 32px;
+}
+#pause-screen.open { display: flex; }
+
+.pause-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: #ffd700;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+}

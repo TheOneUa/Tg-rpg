@@ -9,8 +9,8 @@
 // O = дверь дома (вход, контекстная кнопка "Войти")
 const VILLAGE_RAW = [
     "TTTTTTTTTTTTT",
+    "THHOTTTTHHOTT",
     "THHHTTTTHHHTT",
-    "THHOTTTTHOHTT",
     "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
@@ -25,8 +25,8 @@ const VILLAGE_RAW = [
 
 // Привязка дома к двери (координаты тайла двери в деревне) → house id
 const VILLAGE_HOUSES = [
-    { id: 'smith',  doorX: 3,  doorY: 2,  name: 'Кузница',        npcName: 'Кузнец',  icon: '🛠️' },
-    { id: 'elf',    doorX: 10, doorY: 2,  name: 'Шатёр эльфа',    npcName: 'Эльф',    icon: '🏹' },
+    { id: 'smith',  doorX: 3,  doorY: 1,  name: 'Кузница',        npcName: 'Кузнец',  icon: '🛠️' },
+    { id: 'elf',    doorX: 10, doorY: 1,  name: 'Шатёр эльфа',    npcName: 'Эльф',    icon: '🏹' },
     { id: 'witch',  doorX: 11, doorY: 8,  name: 'Башня колдуньи', npcName: 'Колдунья', icon: '🔮' }
 ];
 

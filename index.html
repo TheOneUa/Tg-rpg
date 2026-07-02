@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>⚔️ TG-RPG v5.2.0</title>
+    <title>⚔️ TG-RPG v5.2.5</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -166,6 +166,14 @@
 <div id="create-screen">
     <div class="title">📝 Создание персонажа</div>
     <div class="subtitle" id="create-sub">Выбери имя и класс</div>
+
+    <!-- Превью спрайта выбранного класса -->
+    <div class="class-preview">
+        <canvas id="preview-canvas" width="144" height="144"></canvas>
+        <div class="class-preview-name" id="preview-name">Мечник</div>
+        <div class="class-preview-stats" id="preview-stats">❤️160  💧30  ⚔️30  🛡️10</div>
+    </div>
+
     <div class="input-group">
         <label>Имя героя</label>
         <input type="text" id="hero-name" placeholder="Введите имя..." maxlength="16">
@@ -183,6 +191,26 @@
         <button class="load-btn" id="load-btn" style="display:none">💾 Продолжить</button>
         <button class="reset-btn" id="reset-btn" style="display:none">🗑️ Начать заново</button>
     </div>
+</div>
+
+<!-- КНОПКА ПАУЗЫ (в игре) -->
+<button id="pause-btn" style="display:none">☰</button>
+
+<!-- ЭКРАН ПАУЗЫ -->
+<div id="pause-screen">
+    <div class="pause-title">⏸ Пауза</div>
+    <button class="menu-btn menu-btn-secondary" id="pause-continue">
+        <span class="btn-icon">▶️</span>
+        <span class="btn-text">Продолжить<span class="btn-sub">Вернуться в игру</span></span>
+    </button>
+    <button class="menu-btn menu-btn-settings" id="pause-settings">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-text">Настройки<span class="btn-sub">Звук и вибрация</span></span>
+    </button>
+    <button class="menu-btn menu-btn-secondary" id="pause-menu">
+        <span class="btn-icon">🏠</span>
+        <span class="btn-text">Главное меню<span class="btn-sub">Прогресс сохранён</span></span>
+    </button>
 </div>
 
 <!-- HUD -->
@@ -305,6 +333,7 @@
 <script src="js/ui/Modal.js"></script>
 
 <!-- Utils -->
+<script src="js/utils/SpriteEngine.js"></script>
 <script src="js/utils/Canvas.js"></script>
 
 <!-- Main -->
