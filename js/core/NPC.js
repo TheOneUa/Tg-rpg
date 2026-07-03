@@ -12,14 +12,20 @@ const NPC_DATA = {
 class NPC {
     constructor(x, y, t) {
         this.type = t;
-        const d = NPC_DATA[t] || NPC_DATA[0];
-        this.name = d.name;
-        this.col = d.col;
-        this.icon = d.icon;
-        this.label = d.label;
+        this._refresh();
         this.x = x * CFG.TILE + CFG.TILE/2;
         this.y = y * CFG.TILE + CFG.TILE/2;
         this.anim = Math.random() * Math.PI * 2;
+    }
+
+    _refresh() {
+        // Берём данные из namesConfig если есть, иначе из NPC_DATA defaults
+        const named = getName('npcs', String(this.type));
+        const def   = NPC_DATA[this.type] || NPC_DATA[0];
+        this.name  = named.name  || def.name;
+        this.icon  = named.icon  || def.icon;
+        this.label = named.label || def.label;
+        this.col   = def.col;
     }
     
     update() {

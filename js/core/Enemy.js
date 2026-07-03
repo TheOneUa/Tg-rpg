@@ -15,26 +15,90 @@ class Enemy {
         if (!this.alive) return;
         const dt = G.dt || 1;
         if (this.stunTimer > 0) { this.stunTimer -= dt; return; }
-        
+
         this.anim += 0.1 * dt;
         if (this.acd > 0) this.acd -= dt;
-        
+
         const ex = this.x * CFG.TILE + CFG.TILE/2;
         const ey = this.y * CFG.TILE + CFG.TILE/2;
         const dist = Math.hypot(px - ex, py - ey);
-        
-        if (dist < CFG.TILE * 8 && dist > 2) {
-            const dx = (px - ex) / dist * this.spd * dt;
-            const dy = (py - ey) / dist * this.spd * dt;
-            const nx = this.x + dx / CFG.TILE;
-            const ny = this.y + dy / CFG.TILE;
-            const tx = Math.round(nx);
-            const ty = Math.round(ny);
-            
-            if (tx >= 0 && tx < CFG.D_COLS && ty >= 0 && ty < CFG.D_ROWS && !SOLID.has(tm[ty][tx])) {
-                this.x = nx;
-                this.y = ny;
+        if (dist > CFG.TILE * 10 || dist < 2) return;
+
+        const etx = Math.floor(this.x); // тайловые координаты врага
+        const ety = Math.floor(this.y);
+        const ptx = Math.floor(px / CFG.TILE); // тайловые координаты игрока
+        const pty = Math.floor(py / CFG.TILE);
+
+        // ── Пересчёт пути A* раз в ~30 тиков или при смене цели ──
+        if (!this._pathTimer) this._pathTimer = 0;
+        this._pathTimer -= dt;
+
+        const targetChanged = this._pathTargetX !== ptx || this._pathTargetY !== pty;
+        if (this._pathTimer <= 0 || targetChanged || !this._path) {
+            this._pathTimer = 25 + Math.random() * 10; // небольшой рандом чтобы не все разом
+            this._pathTargetX = ptx;
+            this._pathTargetY = pty;
+
+            // Если прямая видимость есть — A* не нужен, идём напрямую
+            if (hasLineOfSight(etx, ety, ptx, pty, tm)) {
+                this._path = null; // null = двигаться напрямую
+                this._hasLOS = true;
+            } else {
+                this._path = astarPath(etx, ety, ptx, pty, tm, 300);
+                this._pathIdx = 0;
+                this._hasLOS = false;
             }
+        }
+
+        let dx, dy;
+
+        if (this._hasLOS || !this._path || this._path.length === 0) {
+            // Прямое движение к игроку
+            dx = (px - ex) / dist;
+            dy = (py - ey) / dist;
+        } else {
+            // Следуем по пути A*
+            if (!this._pathIdx) this._pathIdx = 0;
+
+            // Пропускаем уже пройденные узлы
+            while (this._pathIdx < this._path.length) {
+                const node = this._path[this._pathIdx];
+                const nodePx = node.x * CFG.TILE + CFG.TILE/2;
+                const nodePy = node.y * CFG.TILE + CFG.TILE/2;
+                if (Math.hypot(ex - nodePx, ey - nodePy) < CFG.TILE * 0.6) {
+                    this._pathIdx++;
+                } else {
+                    break;
+                }
+            }
+
+            if (this._pathIdx >= this._path.length) {
+                // Дошли до конца пути, идём напрямую
+                dx = (px - ex) / dist;
+                dy = (py - ey) / dist;
+            } else {
+                const node = this._path[this._pathIdx];
+                const nodePx = node.x * CFG.TILE + CFG.TILE/2;
+                const nodePy = node.y * CFG.TILE + CFG.TILE/2;
+                const ndist = Math.hypot(nodePx - ex, nodePy - ey);
+                dx = (nodePx - ex) / ndist;
+                dy = (nodePy - ey) / ndist;
+            }
+        }
+
+        // Двигаемся с раздельной проверкой осей (X и Y отдельно, чтобы скользить вдоль стен)
+        const spd = this.spd * dt;
+        const nx = this.x + (dx * spd) / CFG.TILE;
+        const ny = this.y + (dy * spd) / CFG.TILE;
+        const tx = Math.round(nx);
+        const ty = Math.round(this.y);
+        if (tx >= 0 && tx < CFG.D_COLS && ty >= 0 && ty < CFG.D_ROWS && !SOLID.has(tm[ty][tx])) {
+            this.x = nx;
+        }
+        const tx2 = Math.round(this.x);
+        const ty2 = Math.round(ny);
+        if (tx2 >= 0 && tx2 < CFG.D_COLS && ty2 >= 0 && ty2 < CFG.D_ROWS && !SOLID.has(tm[ty2][tx2])) {
+            this.y = ny;
         }
     }
     

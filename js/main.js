@@ -220,6 +220,91 @@ function initMenuHandlers() {
             showMainMenu();
         }
     });
+
+    bindTapButton(document.getElementById('menu-admin'), () => {
+        document.getElementById('menu-screen').classList.remove('open');
+        openAdminPinScreen();
+    });
+}
+
+// ============================================================
+//  ПИНКОД АДМИН-ПАНЕЛИ (из меню)
+// ============================================================
+const ADMIN_PIN_KEY = 'tg_rpg_admin_pin';
+const ADMIN_TG_IDS  = []; // добавь свой Telegram ID: [123456789]
+
+let _adminPinBuf = '';
+
+function getAdminPin() {
+    return localStorage.getItem(ADMIN_PIN_KEY) || '1234';
+}
+
+function openAdminPinScreen() {
+    _adminPinBuf = '';
+    _updateAdminPinDisplay();
+    document.getElementById('admin-pin-error').textContent = '';
+    document.getElementById('admin-pin-screen').classList.add('open');
+
+    // Если Telegram ID совпадает — сразу войти
+    try {
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (tgUser && ADMIN_TG_IDS.includes(tgUser.id)) {
+            document.getElementById('admin-pin-screen').classList.remove('open');
+            _openAdminPanel();
+            return;
+        }
+    } catch(e) {}
+}
+
+function _updateAdminPinDisplay() {
+    for (let i = 0; i < 4; i++) {
+        document.getElementById('apd' + i)
+            .classList.toggle('filled', i < _adminPinBuf.length);
+    }
+}
+
+function _adminPinKey(n) {
+    if (n === 'cancel') {
+        document.getElementById('admin-pin-screen').classList.remove('open');
+        document.getElementById('menu-screen').classList.add('open');
+        return;
+    }
+    if (n === 'back') {
+        _adminPinBuf = _adminPinBuf.slice(0, -1);
+        _updateAdminPinDisplay();
+        document.getElementById('admin-pin-error').textContent = '';
+        return;
+    }
+    if (_adminPinBuf.length >= 6) return;
+    _adminPinBuf += n;
+    _updateAdminPinDisplay();
+
+    // Проверяем после ввода минимальной длины
+    if (_adminPinBuf.length >= 4) {
+        setTimeout(() => {
+            if (_adminPinBuf === getAdminPin()) {
+                document.getElementById('admin-pin-screen').classList.remove('open');
+                _openAdminPanel();
+            } else if (_adminPinBuf.length >= getAdminPin().length) {
+                document.getElementById('admin-pin-error').textContent = '❌ Неверный пинкод';
+                _adminPinBuf = '';
+                _updateAdminPinDisplay();
+            }
+        }, 180);
+    }
+}
+
+function _openAdminPanel() {
+    // Открываем admin.html в новой вкладке (или в iframe overlay)
+    window.open('admin.html', '_blank');
+    // Возвращаем пользователя в меню
+    document.getElementById('menu-screen').classList.add('open');
+}
+
+function initAdminPinHandlers() {
+    document.querySelectorAll('.apk').forEach(btn => {
+        bindTapButton(btn, () => _adminPinKey(btn.dataset.n));
+    });
 }
 
 // ============================================================
@@ -600,16 +685,16 @@ function enterHouse(houseId) {
     G.enemies = [];
     G.items = [];
 
-    // Мастер стоит в центре комнаты, чуть выше двери
+    // Мастер в центре комнаты
     const npc = new NPC(Math.floor(HOUSE_W/2), Math.floor(HOUSE_H/2) - 1, houseId);
     G.npcs = [npc];
 
-    // Игрок появляется у входа (снизу, рядом с дверью)
-    const { exitX, exitY } = generateHouseGrid();
-    G.p.x = exitX * CFG.TILE + CFG.TILE/2;
-    G.p.y = (exitY - 1) * CFG.TILE + CFG.TILE/2;
+    // Игрок у двери (нижний левый угол = 0, HOUSE_H-1), встаём строкой выше
+    G.p.x = 1 * CFG.TILE + CFG.TILE/2;
+    G.p.y = (HOUSE_H - 2) * CFG.TILE + CFG.TILE/2;
 
-    G.floats.push(new FText(G.p.x, G.p.y - CFG.TILE, '🚪 ' + house.name, '#ffd700', 15));
+    const houseName = typeof house.name === 'function' ? house.name() : house.name;
+    G.floats.push(new FText(G.p.x, G.p.y - CFG.TILE, '🚪 ' + houseName, '#ffd700', 15));
     sound.play('portal');
     tgVibrate('medium');
 }
@@ -625,8 +710,9 @@ function exitHouse() {
     G.items = [];
 
     if (house) {
+        // Дверь — нижний левый угол дома, спавн на тайл ниже (на траве)
         G.p.x = house.doorX * CFG.TILE + CFG.TILE/2;
-        G.p.y = (house.doorY + 2) * CFG.TILE + CFG.TILE/2; // чуть ниже двери, на траве
+        G.p.y = (house.doorY + 1) * CFG.TILE + CFG.TILE/2;
     } else {
         G.p.x = CFG.SPAWN_X;
         G.p.y = CFG.SPAWN_Y;
@@ -978,24 +1064,63 @@ function loop(timestamp) {
     
     // Снаряды
     for(const f of G.projs) {
-        for(let i=0; i<f.trail.length; i++) {
-            const a = (i+1)/f.trail.length;
-            ctx.globalAlpha = a*0.6;
-            ctx.fillStyle = '#e68220';
-            ctx.beginPath();
-            ctx.arc(wx(f.trail[i].x, cx), wy(f.trail[i].y, cy), 10*a*SC, 0, Math.PI*2);
-            ctx.fill();
+        // Обновляем анимацию снаряда
+        const projKey = 'projectile_' + (f.type || 'arrow');
+        const projCfg = getAnimConfig(projKey, 'fly');
+        const projCols = projCfg ? projCfg.cols : 4;
+        const projFps  = projCfg ? projCfg.fps  : 12;
+        f.spriteTimer = (f.spriteTimer || 0) + G.dt;
+        if (f.spriteTimer >= 60 / projFps) {
+            f.spriteTimer -= 60 / projFps;
+            f.spriteFrame = ((f.spriteFrame || 0) + 1) % projCols;
         }
-        ctx.globalAlpha = 1;
+
         const px = wx(f.x, cx);
         const py = wy(f.y, cy);
-        ctx.fillStyle = '#ffd700';
-        ctx.beginPath();
-        ctx.arc(px, py, 10*SC, 0, Math.PI*2);
-        ctx.fill();
-        ctx.strokeStyle = '#e68220';
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        const projSize = (f.type === 'fireball' ? 40 : 28) * SC;
+        const angle = f.angle !== undefined ? f.angle : Math.atan2(f.vy, f.vx);
+
+        // Пробуем нарисовать спрайт
+        const usedProjSprite = drawProjectileSprite(projKey, 'fly', f.spriteFrame || 0, angle, px, py, projSize);
+
+        // Fallback векторный рендер
+        if (!usedProjSprite) {
+            // Трейл
+            for(let i = 0; i < f.trail.length; i++) {
+                const a = (i+1)/f.trail.length;
+                ctx.globalAlpha = a * 0.6;
+                ctx.fillStyle = f.trailColor || '#e68220';
+                ctx.beginPath();
+                ctx.arc(wx(f.trail[i].x, cx), wy(f.trail[i].y, cy), 8*a*SC, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            if (f.type === 'arrow') {
+                ctx.save();
+                ctx.translate(px, py);
+                ctx.rotate(angle);
+                ctx.fillStyle = f.color || '#e8c840';
+                ctx.fillRect(-14*SC, -3*SC, 28*SC, 6*SC);
+                ctx.fillStyle = '#c8a020';
+                ctx.beginPath();
+                ctx.moveTo(14*SC, 0);
+                ctx.lineTo(8*SC, -5*SC);
+                ctx.lineTo(8*SC, 5*SC);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            } else {
+                // Файрбол
+                const grad = ctx.createRadialGradient(px, py, 0, px, py, 14*SC);
+                grad.addColorStop(0, '#ffffaa');
+                grad.addColorStop(0.4, '#ff8800');
+                grad.addColorStop(1, 'rgba(255,50,0,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(px, py, 14*SC, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
     }
     
     // Частицы и текст

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>⚔️ TG-RPG v5.2.5</title>
+    <title>⚔️ TG-RPG v5.3.1</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -55,7 +55,39 @@
         <span class="btn-text">Настройки<span class="btn-sub">Звук и вибрация</span></span>
     </button>
 
+    <button class="menu-btn menu-btn-admin" id="menu-admin">
+        <span class="btn-icon">🛠️</span>
+        <span class="btn-text">Админ-панель<span class="btn-sub">Настройка спрайтов и имён</span></span>
+    </button>
+
     <div class="menu-version" id="menu-version">v5.0.2</div>
+</div>
+
+<!-- ПИНКОД ДЛЯ ВХОДА В АДМИНКУ -->
+<div id="admin-pin-screen">
+    <div class="admin-pin-title">🛠️ Админ-панель</div>
+    <div class="admin-pin-sub">Введите пинкод</div>
+    <div class="admin-pin-display" id="admin-pin-display">
+        <div class="apd" id="apd0"></div>
+        <div class="apd" id="apd1"></div>
+        <div class="apd" id="apd2"></div>
+        <div class="apd" id="apd3"></div>
+    </div>
+    <div class="admin-pin-pad">
+        <div class="apk" data-n="1">1</div>
+        <div class="apk" data-n="2">2</div>
+        <div class="apk" data-n="3">3</div>
+        <div class="apk" data-n="4">4</div>
+        <div class="apk" data-n="5">5</div>
+        <div class="apk" data-n="6">6</div>
+        <div class="apk" data-n="7">7</div>
+        <div class="apk" data-n="8">8</div>
+        <div class="apk" data-n="9">9</div>
+        <div class="apk apk-back" data-n="back">⌫</div>
+        <div class="apk" data-n="0">0</div>
+        <div class="apk apk-cancel" data-n="cancel">✕</div>
+    </div>
+    <div class="admin-pin-error" id="admin-pin-error"></div>
 </div>
 
 <!-- ЭКРАН НАСТРОЕК -->
@@ -333,7 +365,9 @@
 <script src="js/ui/Modal.js"></script>
 
 <!-- Utils -->
+<script src="js/utils/SpriteConfig.js"></script>
 <script src="js/utils/SpriteEngine.js"></script>
+<script src="js/utils/Pathfinding.js"></script>
 <script src="js/utils/Canvas.js"></script>
 
 <!-- Main -->

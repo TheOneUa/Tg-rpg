@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TG-RPG Admin</title>
+<script src="js/config.js"></script>
+<script src="js/utils/SpriteConfig.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #0d0d1a; color: #ddd; min-height: 100vh; }
+
+/* ── Авторизация ── */
+#auth-wall {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; gap: 16px; padding: 32px;
+}
+#auth-wall h1 { font-size: 24px; color: #ffd700; }
+#auth-wall p  { font-size: 13px; color: #666; text-align: center; }
+.pin-display {
+    display: flex; gap: 10px; margin: 8px 0;
+}
+.pin-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid #555; background: transparent;
+    transition: background .15s;
+}
+.pin-dot.filled { background: #ffd700; border-color: #ffd700; }
+.pin-pad {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; width: 220px;
+}
+.pin-key {
+    padding: 16px; border-radius: 12px; border: 1px solid #333;
+    background: rgba(255,255,255,.06); color: #fff; font-size: 20px;
+    font-weight: 700; cursor: pointer; text-align: center;
+    transition: background .1s;
+}
+.pin-key:active { background: rgba(255,215,0,.2); }
+.pin-key.wide { grid-column: span 3; font-size: 14px; padding: 12px; color: #f66; }
+.pin-error { color: #f66; font-size: 13px; min-height: 20px; }
+
+/* ── Основной интерфейс ── */
+#admin-ui { display: none; }
+.admin-header {
+    background: rgba(0,0,0,.6); padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,.08); position: sticky; top: 0; z-index: 10;
+}
+.admin-header h1 { font-size: 18px; color: #ffd700; }
+.admin-header .actions { display: flex; gap: 8px; }
+.btn { padding: 8px 16px; border-radius: 10px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-primary { background: linear-gradient(135deg,#ffd700,#ff8800); color: #111; }
+.btn-danger { background: rgba(200,50,50,.2); color: #f88; border: 1px solid rgba(200,50,50,.3); }
+.btn-secondary { background: rgba(255,255,255,.07); color: #aaa; border: 1px solid rgba(255,255,255,.1); }
+.btn:active { opacity: .75; }
+
+.tabs {
+    display: flex; gap: 0; padding: 0 20px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(0,0,0,.3);
+    overflow-x: auto;
+}
+.tab {
+    padding: 12px 18px; font-size: 13px; font-weight: 600; color: #666;
+    cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
+    transition: color .15s;
+}
+.tab.active { color: #ffd700; border-color: #ffd700; }
+
+.tab-content { display: none; padding: 20px; max-width: 700px; }
+.tab-content.active { display: block; }
+
+/* ── Карточка анимации ── */
+.anim-card {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px; padding: 16px; margin-bottom: 12px;
+}
+.anim-card h3 { font-size: 13px; color: #ffd700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.anim-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.anim-row label { font-size: 11px; color: #666; width: 100%; }
+.field-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 80px; }
+.field-group span { font-size: 10px; color: #555; }
+input[type="text"], input[type="number"], select {
+    background: #1a1a2e; border: 1px solid #333; border-radius: 8px;
+    color: #ddd; font-size: 13px; padding: 8px 10px; width: 100%;
+}
+input:focus, select:focus { outline: none; border-color: #ffd700; }
+select option { background: #1a1a2e; }
+.preview-mini {
+    width: 48px; height: 48px; border-radius: 8px; border: 1px solid #333;
+    background: rgba(255,255,255,.03); image-rendering: pixelated;
+    flex-shrink: 0;
+}
+.status-ok  { color: #4f4; font-size: 11px; }
+.status-err { color: #f66; font-size: 11px; }
+.status-na  { color: #666; font-size: 11px; }
+
+/* ── Звуки ── */
+.sound-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.sound-chip {
+    padding: 6px 12px; border-radius: 20px; border: 1px solid #333;
+    background: rgba(255,255,255,.05); color: #aaa; font-size: 12px; cursor: pointer;
+    transition: background .1s;
+}
+.sound-chip:active { background: rgba(255,215,0,.15); }
+
+.section-title { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1.5px; margin: 16px 0 8px; }
+.saved-badge {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(80,200,80,.9); color: #111; padding: 8px 20px; border-radius: 20px;
+    font-size: 13px; font-weight: 700; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999;
+}
+.saved-badge.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ── АВТОРИЗАЦИЯ ── -->
+<div id="auth-wall">
+    <h1>🛡️ TG-RPG Admin</h1>
+    <p id="auth-status">Введите пинкод для входа</p>
+    <div class="pin-display" id="pin-display">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-pad">
+        <div class="pin-key" onclick="pinKey(1)">1</div>
+        <div class="pin-key" onclick="pinKey(2)">2</div>
+        <div class="pin-key" onclick="pinKey(3)">3</div>
+        <div class="pin-key" onclick="pinKey(4)">4</div>
+        <div class="pin-key" onclick="pinKey(5)">5</div>
+        <div class="pin-key" onclick="pinKey(6)">6</div>
+        <div class="pin-key" onclick="pinKey(7)">7</div>
+        <div class="pin-key" onclick="pinKey(8)">8</div>
+        <div class="pin-key" onclick="pinKey(9)">9</div>
+        <div class="pin-key" onclick="pinKey(0)">0</div>
+        <div class="pin-key" onclick="pinBackspace()">⌫</div>
+        <div class="pin-key wide" onclick="pinClear()">Очистить</div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+</div>
+
+<!-- ── ADMIN UI ── -->
+<div id="admin-ui">
+    <div class="admin-header">
+        <h1>⚙️ TG-RPG Admin</h1>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="saveAll()">💾 Сохранить</button>
+            <button class="btn btn-danger" onclick="resetAll()">↺ Сброс</button>
+            <button class="btn btn-secondary" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('heroes')">⚔️ Герои</div>
+        <div class="tab" onclick="showTab('projectiles')">🏹 Снаряды</div>
+        <div class="tab" onclick="showTab('sounds')">🔊 Звуки</div>
+        <div class="tab" onclick="showTab('names')">✏️ Названия</div>
+        <div class="tab" onclick="showTab('pin')">🔑 Пинкод</div>
+    </div>
+
+    <div id="tab-heroes" class="tab-content active"></div>
+    <div id="tab-projectiles" class="tab-content"></div>
+    <div id="tab-sounds" class="tab-content"></div>
+    <div id="tab-names" class="tab-content"></div>
+    <div id="tab-pin" class="tab-content">
+        <div class="section-title">Изменить пинкод</div>
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="field-group">
+                <span>Новый пинкод (4-6 цифр)</span>
+                <input type="number" id="new-pin" placeholder="1234" style="max-width:140px">
+            </div>
+            <button class="btn btn-primary" onclick="changePin()">Сохранить пин</button>
+        </div>
+        <div id="pin-change-status" style="margin-top:8px;font-size:12px;color:#4f4"></div>
+    </div>
+
+    <div class="saved-badge" id="saved-badge">✅ Конфиг сохранён</div>
+</div>
+
+<script src="js/telegram/Auth.js"></script>
+<script>
+// ============================================================
+//  АВТОРИЗАЦИЯ
+// ============================================================
+const ADMIN_PIN_KEY  = 'tg_rpg_admin_pin';
+const ADMIN_AUTH_KEY = 'tg_rpg_admin_auth';
+const DEFAULT_PIN    = '1234';
+// Вставь свой Telegram ID сюда:
+const ADMIN_TG_IDS   = [];  // например [123456789]
+
+let pinBuffer = '';
+
+function getStoredPin() {
+    return localStorage.getItem(ADMIN_PIN_KEY) || DEFAULT_PIN;
+}
+
+function checkTgAuth() {
+    try {
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (tgUser && ADMIN_TG_IDS.includes(tgUser.id)) {
+            enterAdmin();
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+function pinKey(n) {
+    if (pinBuffer.length >= 6) return;
+    pinBuffer += n;
+    updatePinDisplay();
+    if (pinBuffer.length >= 4) setTimeout(tryPin, 200);
+}
+
+function pinBackspace() {
+    pinBuffer = pinBuffer.slice(0, -1);
+    updatePinDisplay();
+    document.getElementById('pin-error').textContent = '';
+}
+
+function pinClear() {
+    pinBuffer = '';
+    updatePinDisplay();
+    document.getElementById('pin-error').textContent = '';
+}
+
+function updatePinDisplay() {
+    for (let i = 0; i < 4; i++) {
+        document.getElementById('pd' + i).classList.toggle('filled', i < pinBuffer.length);
+    }
+}
+
+function tryPin() {
+    if (pinBuffer === getStoredPin()) {
+        sessionStorage.setItem(ADMIN_AUTH_KEY, '1');
+        enterAdmin();
+    } else if (pinBuffer.length >= 4) {
+        document.getElementById('pin-error').textContent = '❌ Неверный пинкод';
+        pinBuffer = '';
+        updatePinDisplay();
+    }
+}
+
+function enterAdmin() {
+    document.getElementById('auth-wall').style.display = 'none';
+    document.getElementById('admin-ui').style.display = 'block';
+    buildUI();
+}
+
+function logout() {
+    sessionStorage.removeItem(ADMIN_AUTH_KEY);
+    location.reload();
+}
+
+function changePin() {
+    const val = document.getElementById('new-pin').value.trim();
+    if (val.length < 4 || val.length > 6 || !/^\d+$/.test(val)) {
+        document.getElementById('pin-change-status').style.color = '#f66';
+        document.getElementById('pin-change-status').textContent = 'Пинкод должен быть от 4 до 6 цифр';
+        return;
+    }
+    localStorage.setItem(ADMIN_PIN_KEY, val);
+    document.getElementById('pin-change-status').style.color = '#4f4';
+    document.getElementById('pin-change-status').textContent = '✅ Пинкод сохранён';
+}
+
+// Проверка сессии
+if (sessionStorage.getItem(ADMIN_AUTH_KEY)) {
+    enterAdmin();
+} else {
+    checkTgAuth();
+}
+
+// ============================================================
+//  ПОСТРОЕНИЕ UI
+// ============================================================
+const ANIMS = ['idle', 'walk', 'attack', 'ability', 'death'];
+const ANIM_LABELS = { idle:'Стоит', walk:'Ходьба', attack:'Атака', ability:'Навык', death:'Смерть' };
+const HERO_KEYS = ['hero_warrior', 'hero_archer', 'hero_mage'];
+const HERO_LABELS = { hero_warrior:'⚔️ Мечник', hero_archer:'🏹 Лучник', hero_mage:'🔮 Маг' };
+const PROJ_KEYS   = ['projectile_arrow', 'projectile_fireball'];
+const PROJ_LABELS = { projectile_arrow:'🏹 Стрела', projectile_fireball:'🔥 Файрбол' };
+const PROJ_PHASES = ['fly', 'hit'];
+const PHASE_LABELS = { fly:'Полёт', hit:'Попадание' };
+
+const SOUND_OPTIONS = ['null', 'hit', 'crit', 'kill', 'portal', 'pickup', 'levelup'];
+
+// Рабочая копия конфига в памяти
+let editConfig = {};
+
+let editNames = {};
+
+function buildUI() {
+    editConfig = JSON.parse(JSON.stringify(spriteConfig));
+    editNames  = JSON.parse(JSON.stringify(namesConfig));
+    buildHeroTab();
+    buildProjectileTab();
+    buildSoundsTab();
+    buildNamesTab();
+}
+
+function buildNamesTab() {
+    const el = document.getElementById('tab-names');
+
+    const sections = [
+        { key: 'heroes',    label: '⚔️ Классы героев',    fields: [
+            { id:'warrior', label:'Мечник' },
+            { id:'archer',  label:'Лучник' },
+            { id:'mage',    label:'Маг'    },
+        ]},
+        { key: 'npcs',      label: '🧑 NPC',               fields: [
+            { id:'0',       label:'Торговец' },
+            { id:'1',       label:'Старейшина' },
+            { id:'smith',   label:'Кузнец (внутри кузницы)' },
+            { id:'elf',     label:'Эльф (внутри шатра)' },
+            { id:'witch',   label:'Колдунья (внутри башни)' },
+        ]},
+        { key: 'buildings', label: '🏠 Здания', fields: [
+            { id:'smith',   label:'Кузница' },
+            { id:'elf',     label:'Шатёр эльфа' },
+            { id:'witch',   label:'Башня колдуньи' },
+        ]},
+    ];
+
+    el.innerHTML = sections.map(sec => `
+        <div class="section-title">${sec.label}</div>
+        ${sec.fields.map(f => {
+            const cur = (editNames[sec.key] || {})[f.id] || {};
+            return \`<div class="anim-card" style="padding:12px 16px">
+                <div style="font-size:12px;color:#888;margin-bottom:8px">${f.label}</div>
+                <div class="anim-row">
+                    <div class="field-group" style="max-width:56px">
+                        <span>Иконка</span>
+                        <input type="text" value="\${cur.icon||''}" placeholder="⚔️"
+                            data-ns="\${sec.key}" data-nid="\${f.id}" data-nf="icon" style="max-width:56px;font-size:18px;text-align:center">
+                    </div>
+                    <div class="field-group">
+                        <span>Название</span>
+                        <input type="text" value="\${cur.name||''}" placeholder="\${f.label}"
+                            data-ns="\${sec.key}" data-nid="\${f.id}" data-nf="name">
+                    </div>
+                    \${cur.label !== undefined || (editNames[sec.key]||{})[f.id]?.label !== undefined ? \`
+                    <div class="field-group">
+                        <span>Подпись (тултип)</span>
+                        <input type="text" value="\${cur.label||''}" placeholder="Магазин"
+                            data-ns="\${sec.key}" data-nid="\${f.id}" data-nf="label">
+                    </div>\` : ''}
+                </div>
+            </div>\`;
+        }).join('')}
+    `).join('');
+
+    // Слушатели для полей имён
+    el.querySelectorAll('[data-ns][data-nid][data-nf]').forEach(inp => {
+        inp.addEventListener('input', () => {
+            const { ns, nid, nf } = inp.dataset;
+            if (!editNames[ns]) editNames[ns] = {};
+            if (!editNames[ns][nid]) editNames[ns][nid] = {};
+            editNames[ns][nid][nf] = inp.value;
+        });
+    });
+}
+
+function buildHeroTab() {
+    const el = document.getElementById('tab-heroes');
+    el.innerHTML = HERO_KEYS.map(hk => `
+        <div class="section-title">${HERO_LABELS[hk]}</div>
+        ${ANIMS.map(anim => buildAnimCard(hk, anim)).join('')}
+    `).join('');
+    attachListeners();
+}
+
+function buildProjectileTab() {
+    const el = document.getElementById('tab-projectiles');
+    el.innerHTML = PROJ_KEYS.map(pk => `
+        <div class="section-title">${PROJ_LABELS[pk]}</div>
+        ${PROJ_PHASES.map(phase => buildAnimCard(pk, phase, PHASE_LABELS[phase])).join('')}
+    `).join('');
+    attachListeners();
+}
+
+function buildAnimCard(spriteKey, anim, labelOverride) {
+    const cfg = ((editConfig[spriteKey] || {})[anim]) || {};
+    const label = labelOverride || ANIM_LABELS[anim] || anim;
+    const fileVal   = cfg.file   || '';
+    const colsVal   = cfg.cols   || 4;
+    const fpsVal    = cfg.fps    || 8;
+    const soundVal  = cfg.sound  || 'null';
+    const rowVal    = cfg.row    !== undefined ? cfg.row : 0;
+    const rotateVal = cfg.rotate ? 'checked' : '';
+
+    const fileOk = fileVal
+        ? `<span class="status-ok">📁 ${fileVal}</span>`
+        : `<span class="status-na">нет файла</span>`;
+
+    const soundSelect = `<select data-key="${spriteKey}" data-anim="${anim}" data-field="sound">
+        ${SOUND_OPTIONS.map(s => `<option value="${s}" ${soundVal===s?'selected':''}>${s==='null'?'🔇 без звука':'🔊 '+s}</option>`).join('')}
+    </select>`;
+
+    const hasRotate = spriteKey.startsWith('projectile_');
+
+    return `<div class="anim-card">
+        <h3>${label}</h3>
+        <div class="anim-row">
+            <div class="field-group" style="flex:3">
+                <span>Файл (в assets/sprites/)</span>
+                <input type="text" value="${fileVal}" placeholder="warrior_idle.png"
+                    data-key="${spriteKey}" data-anim="${anim}" data-field="file">
+            </div>
+            <div class="field-group">
+                <span>Кадров</span>
+                <input type="number" value="${colsVal}" min="1" max="32" style="max-width:70px"
+                    data-key="${spriteKey}" data-anim="${anim}" data-field="cols">
+            </div>
+            <div class="field-group">
+                <span>FPS</span>
+                <input type="number" value="${fpsVal}" min="1" max="60" style="max-width:70px"
+                    data-key="${spriteKey}" data-anim="${anim}" data-field="fps">
+            </div>
+            <div class="field-group">
+                <span>Строка (row)</span>
+                <input type="number" value="${rowVal}" min="0" max="99" style="max-width:70px"
+                    data-key="${spriteKey}" data-anim="${anim}" data-field="row">
+            </div>
+        </div>
+        <div class="anim-row">
+            <div class="field-group" style="flex:2">
+                <span>Звук</span>
+                ${soundSelect}
+            </div>
+            ${hasRotate ? `<div class="field-group">
+                <span>Вращать по направлению</span>
+                <label style="display:flex;align-items:center;gap:6px;padding-top:4px">
+                    <input type="checkbox" ${rotateVal}
+                        data-key="${spriteKey}" data-anim="${anim}" data-field="rotate">
+                    <span style="font-size:12px">да</span>
+                </label>
+            </div>` : ''}
+            <div>${fileOk}</div>
+        </div>
+    </div>`;
+}
+
+function buildSoundsTab() {
+    const el = document.getElementById('tab-sounds');
+    el.innerHTML = `
+        <div class="section-title">Доступные звуковые ключи</div>
+        <div class="sound-list">
+            ${SOUND_OPTIONS.filter(s=>s!=='null').map(s => `
+                <div class="sound-chip" title="${s}">🔊 ${s}</div>
+            `).join('')}
+        </div>
+        <p style="margin-top:16px;font-size:12px;color:#555">
+            Звуки задаются через имена ключей (hit, crit, kill, portal, pickup, levelup).<br>
+            Привязка к анимации — в карточках вкладок Герои/Снаряды.
+        </p>
+    `;
+}
+
+function attachListeners() {
+    document.querySelectorAll('[data-key][data-anim][data-field]').forEach(el => {
+        el.addEventListener('change', () => {
+            const { key, anim, field } = el.dataset;
+            if (!editConfig[key]) editConfig[key] = {};
+            if (!editConfig[key][anim]) editConfig[key][anim] = {};
+            let val = el.type === 'checkbox' ? el.checked
+                    : el.type === 'number'   ? Number(el.value)
+                    : el.value === 'null'    ? null
+                    : el.value;
+            editConfig[key][anim][field] = val;
+        });
+    });
+}
+
+function showTab(name) {
+    const tabNames = ['heroes','projectiles','sounds','names','pin'];
+    document.querySelectorAll('.tab').forEach((t,i) => {
+        t.classList.toggle('active', tabNames[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+}
+
+function saveAll() {
+    spriteConfig = JSON.parse(JSON.stringify(editConfig));
+    saveSpriteConfig();
+    namesConfig = JSON.parse(JSON.stringify(editNames));
+    saveNamesConfig();
+    const badge = document.getElementById('saved-badge');
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 2000);
+}
+
+function resetAll() {
+    if (!confirm('Сбросить весь конфиг (спрайты и названия) к умолчаниям?')) return;
+    resetSpriteConfig();
+    resetNamesConfig();
+    editConfig = JSON.parse(JSON.stringify(spriteConfig));
+    editNames  = JSON.parse(JSON.stringify(namesConfig));
+    buildUI();
+}
+</script>
+</body>
+</html>

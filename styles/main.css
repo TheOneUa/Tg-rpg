@@ -1110,3 +1110,86 @@ html, body {
     letter-spacing: 2px;
     margin-bottom: 8px;
 }
+
+/* ============================================================
+   КНОПКА АДМИНА В МЕНЮ
+   ============================================================ */
+.menu-btn-admin {
+    background: rgba(255,255,255,0.04);
+    color: #666;
+    border: 1px solid rgba(255,255,255,0.07);
+    font-size: 13px;
+}
+
+/* ============================================================
+   ЭКРАН ВВОДА ПИНКОДА (из меню → админка)
+   ============================================================ */
+#admin-pin-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    background: linear-gradient(180deg, #0a0a14 0%, #12121e 100%);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px 32px;
+}
+#admin-pin-screen.open { display: flex; }
+
+.admin-pin-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffd700;
+}
+.admin-pin-sub {
+    font-size: 13px;
+    color: #666;
+    margin-top: -8px;
+}
+.admin-pin-display {
+    display: flex;
+    gap: 14px;
+    margin: 8px 0;
+}
+.apd {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #444;
+    background: transparent;
+    transition: background .15s, border-color .15s;
+}
+.apd.filled {
+    background: #ffd700;
+    border-color: #ffd700;
+}
+.admin-pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 240px;
+}
+.apk {
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background .1s;
+    -webkit-tap-highlight-color: transparent;
+}
+.apk:active { background: rgba(255,215,0,0.2); }
+.apk-back   { color: #aaa; font-size: 18px; }
+.apk-cancel { color: #f66; font-size: 16px; }
+.admin-pin-error {
+    font-size: 13px;
+    color: #f66;
+    min-height: 18px;
+    text-align: center;
+}

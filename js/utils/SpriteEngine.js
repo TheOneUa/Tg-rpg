@@ -1,42 +1,36 @@
 // ============================================================
 //  SPRITE ENGINE
 // ============================================================
-// Спецификация листа персонажа (warrior.png / archer.png / mage.png):
-//   Сетка: 4 кадра (столбцы) × 5 строк (по одной на анимацию)
-//   Кадр: 48×48 px → лист 192×240 px
-//   Строки по порядку: idle, walk, attack, ability, death
-//   Каждая анимация = ровно 4 кадра.
-//   В листе рисуется ТОЛЬКО направление "влево" (left).
-//   Направление "вправо" получается автоматическим зеркалированием
-//   в рантайме (ctx.scale(-1,1)) — отдельных кадров вправо не нужно.
-//   up/down пока не поддерживаются — используют те же left/right кадры.
-//
-// Если файл не найден/не загружен — рендер автоматически
-// откатывается на старую векторную отрисовку (см. drawX_vector).
+// Работает совместно с SpriteConfig.js.
+// Поддерживает:
+//   - Отдельный файл и произвольное число кадров на каждую анимацию
+//   - Автоопределение размера кадра: frameW = naturalWidth / cols
+//   - Зеркалирование по горизонтали для направления 'left'
+//   - Вращение спрайта снаряда по направлению полёта
 
-const SPRITE_FRAME = 48;
-const SPRITE_COLS = 4;
-const ANIM_ORDER = ['idle', 'walk', 'attack', 'ability', 'death'];
+const SPRITE_FRAME = 48; // дефолт если авто не смогло
+const SPRITE_COLS  = 4;  // дефолт колонок (для обратной совместимости)
+const ANIM_ORDER   = ['idle', 'walk', 'attack', 'ability', 'death'];
 
-// Кэш загруженных изображений: { key: { img, loaded, failed } }
+// ── Кэш ────────────────────────────────────────────────────
 const _spriteCache = {};
 
 function loadSprite(key, path) {
     if (_spriteCache[key]) return _spriteCache[key];
-    const entry = { img: new Image(), loaded: false, failed: false, frameW: SPRITE_FRAME, frameH: SPRITE_FRAME };
+    const entry = { img: new Image(), loaded: false, failed: false, frameW: SPRITE_FRAME, frameH: SPRITE_FRAME, rows: 5 };
     entry.img.onload = () => {
         entry.loaded = true;
-        // Автоопределение размера кадра по ширине листа и числу колонок
-        // Поддерживаемые форматы: 4 кол × N строк (герои, враги)
-        const detectedW = Math.round(entry.img.naturalWidth / SPRITE_COLS);
-        const detectedH = detectedW; // всегда квадратный кадр
-        entry.frameW = detectedW;
-        entry.frameH = detectedH;
-        // Пересчитываем число строк
-        entry.rows = Math.round(entry.img.naturalHeight / detectedH);
-        console.log(`[Sprite] ${key}: ${entry.img.naturalWidth}x${entry.img.naturalHeight} → frame ${detectedW}x${detectedH}, ${entry.rows} rows`);
+        // Автоопределение по конфигу если есть, иначе по ширине / SPRITE_COLS
+        // Реальный cols будет задан в drawCharSprite через cfg.cols
+        entry.naturalW = entry.img.naturalWidth;
+        entry.naturalH = entry.img.naturalHeight;
+        // Дефолтное авто (одиночная строка или квадратная сетка)
+        entry.frameW = Math.round(entry.img.naturalWidth / SPRITE_COLS);
+        entry.frameH = entry.frameW;
+        entry.rows   = Math.round(entry.img.naturalHeight / entry.frameH);
+        console.log(`[Sprite] ${key}: ${entry.naturalW}×${entry.naturalH} → frame ${entry.frameW}×${entry.frameH}, ${entry.rows} rows`);
     };
-    entry.img.onerror = () => { entry.failed = true; console.warn(`[Sprite] Failed to load: ${path}`); };
+    entry.img.onerror = () => { entry.failed = true; console.warn(`[Sprite] Failed: ${path}`); };
     entry.img.src = path;
     _spriteCache[key] = entry;
     return entry;
@@ -47,72 +41,89 @@ function isSpriteReady(key) {
     return !!(e && e.loaded);
 }
 
-// Вычисляет номер строки в листе персонажа по анимации (направление не влияет — лист только left)
-function getCharSheetRow(anim) {
-    const animIdx = ANIM_ORDER.indexOf(anim);
-    return animIdx < 0 ? 0 : animIdx;
-}
+// ── Вспомогательные ────────────────────────────────────────
 
-// Преобразует вектор взгляда (face.x/face.y) в горизонтальное направление 'left'/'right'.
-// Пока поддерживаются только эти два — вертикальное движение наследует
-// последнее горизонтальное направление (по умолчанию 'right').
 function faceToDirection(fx, fy, lastDir) {
     if (Math.abs(fx) > 0.05) return fx > 0 ? 'right' : 'left';
     return lastDir || 'right';
 }
 
-// Рисует кадр персонажа из спрайт-листа (только left/right, зеркалим вправо).
-// frame: номер кадра 0-3
-// size: размер отрисовки в px на экране (с учётом SC масштаба камеры)
-function drawCharSprite(spriteKey, anim, dir, frame, px, py, size) {
-    const entry = _spriteCache[spriteKey];
+// ── Рисование кадра персонажа ───────────────────────────────
+// spriteKey  — ключ в _spriteCache
+// cfg        — объект из getAnimConfig (содержит file, cols, fps, row)
+// frame      — текущий кадр 0..cols-1
+// dir        — 'left' | 'right'
+function drawCharSpriteFromCfg(cfg, frame, dir, px, py, size) {
+    if (!cfg) return false;
+    const fileKey = getSpriteFileKey(cfg.file);
+    const entry = _spriteCache[fileKey];
     if (!entry || !entry.loaded) return false;
 
-    const row = getCharSheetRow(anim);
-    const col = Math.max(0, Math.min(SPRITE_COLS - 1, frame | 0));
-    const fw = entry.frameW || SPRITE_FRAME;
-    const fh = entry.frameH || SPRITE_FRAME;
-    const sx = col * fw;
-    const sy = row * fh;
+    const cols = cfg.cols || SPRITE_COLS;
+    const row  = cfg.row  !== undefined ? cfg.row : 0;
+    const fw   = Math.round(entry.naturalW / cols);
+    const fh   = fw; // квадратный кадр
+    const col  = Math.max(0, Math.min(cols - 1, frame | 0));
+    const sx   = col * fw;
+    const sy   = row * fh;
 
-    ctx.imageSmoothingEnabled = false; // чёткие пиксели, без блюра при масштабировании
+    ctx.imageSmoothingEnabled = false;
     ctx.save();
     if (dir === 'left') {
-        // Лист смотрит вправо — зеркалим для левого направления
         ctx.translate(px, py);
         ctx.scale(-1, 1);
-        ctx.drawImage(
-            entry.img,
-            sx, sy, SPRITE_FRAME, SPRITE_FRAME,
-            -size / 2, -size / 2, size, size
-        );
+        ctx.drawImage(entry.img, sx, sy, fw, fh, -size/2, -size/2, size, size);
     } else {
-        ctx.drawImage(
-            entry.img,
-            sx, sy, SPRITE_FRAME, SPRITE_FRAME,
-            px - size / 2, py - size / 2, size, size
-        );
+        ctx.drawImage(entry.img, sx, sy, fw, fh, px - size/2, py - size/2, size, size);
     }
     ctx.restore();
     return true;
 }
 
-// Простой спрайт без анимации (один кадр) — для предметов/тайлов/NPC-иконок
+// Обёртка — по spriteKey и anim тянет cfg из spriteConfig (для Player.draw)
+function drawCharSprite(spriteKey, anim, dir, frame, px, py, size) {
+    const cfg = getAnimConfig(spriteKey, anim);
+    return drawCharSpriteFromCfg(cfg, frame, dir, px, py, size);
+}
+
+// ── Снаряд ─────────────────────────────────────────────────
+// projKey    — 'projectile_arrow' | 'projectile_fireball'
+// phase      — 'fly' | 'hit'
+// angle      — угол направления в радианах (для rotate:true)
+function drawProjectileSprite(projKey, phase, frame, angle, px, py, size) {
+    const cfg = getAnimConfig(projKey, phase);
+    if (!cfg) return false;
+    const fileKey = getSpriteFileKey(cfg.file);
+    const entry = _spriteCache[fileKey];
+    if (!entry || !entry.loaded) return false;
+
+    const cols = cfg.cols || 4;
+    const fw   = Math.round(entry.naturalW / cols);
+    const col  = Math.max(0, Math.min(cols - 1, frame | 0));
+    const sx   = col * fw;
+    const sy   = 0;
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.save();
+    ctx.translate(px, py);
+    if (cfg.rotate && angle !== undefined) ctx.rotate(angle);
+    ctx.drawImage(entry.img, sx, sy, fw, fw, -size/2, -size/2, size, size);
+    ctx.restore();
+    return true;
+}
+
+// ── Простой спрайт (предметы, иконки) ──────────────────────
 function drawSimpleSprite(spriteKey, px, py, size) {
     const entry = _spriteCache[spriteKey];
     if (!entry || !entry.loaded) return false;
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(entry.img, px - size / 2, py - size / 2, size, size);
+    ctx.drawImage(entry.img, px - size/2, py - size/2, size, size);
     return true;
 }
 
-// ============================================================
-//  ПРЕДЗАГРУЗКА СПРАЙТОВ ГЕРОЕВ
-// ============================================================
+// ── Предзагрузка спрайтов героев ───────────────────────────
 const HERO_SPRITE_KEYS = { warrior: 'hero_warrior', archer: 'hero_archer', mage: 'hero_mage' };
 
 function preloadHeroSprites() {
-    loadSprite('hero_warrior', 'assets/sprites/warrior.png');
-    loadSprite('hero_archer', 'assets/sprites/archer.png');
-    loadSprite('hero_mage', 'assets/sprites/mage.png');
+    preloadAllFromConfig(); // грузит все файлы из SpriteConfig
 }

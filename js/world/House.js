@@ -8,6 +8,7 @@ const HOUSE_H = 6;
 
 function generateHouseGrid() {
     const grid = Array.from({length: HOUSE_H}, () => new Array(HOUSE_W).fill(T_DF));
+    // Стены по периметру
     for (let x = 0; x < HOUSE_W; x++) {
         grid[0][x] = T_DW;
         grid[HOUSE_H - 1][x] = T_DW;
@@ -16,10 +17,9 @@ function generateHouseGrid() {
         grid[y][0] = T_DW;
         grid[y][HOUSE_W - 1] = T_DW;
     }
-    // Дверь — выход обратно в деревню (внизу по центру)
-    const doorX = Math.floor(HOUSE_W / 2);
-    grid[HOUSE_H - 1][doorX] = T_EXIT; // переиспользуем T_EXIT как "выход из дома"
-    return { grid, exitX: doorX, exitY: HOUSE_H - 1 };
+    // Дверь — нижний левый угол (как снаружи)
+    grid[HOUSE_H - 1][0] = T_EXIT;
+    return { grid, exitX: 0, exitY: HOUSE_H - 1 };
 }
 
 function drawHouseTile(c2, t, rx, ry) {

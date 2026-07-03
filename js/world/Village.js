@@ -1,33 +1,29 @@
 // ============================================================
 //  VILLAGE
 // ============================================================
-// Карта деревни 13x13. Дома (HH/HD блоки) размещены в свободных
-// углах, не задевая центральный портал (рисуется отдельно через
-// CFG.PORTAL_X/Y) и каменную площадку (F).
-//
-// H = стена дома (непроходимо)
-// O = дверь дома (вход, контекстная кнопка "Войти")
+// Три дома 4×4 в верхней части карты.
+// H = стена дома (непроходимо), O = дверь (нижний левый угол дома)
 const VILLAGE_RAW = [
     "TTTTTTTTTTTTT",
-    "THHOTTTTHHOTT",
-    "THHHTTTTHHHTT",
+    "THHHHHHHHHHHH",
+    "THHHHHHHHHHHH",
+    "THHHHHHHHHHHH",
+    "TOHHHOHHHOHHH",
     "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
+    "TGGGGFFFGGGGT",
+    "TGGGGFFFGGGGT",
     "TGGGGGGGGGGGT",
-    "TGGGGGGGGGGGT",
-    "TGGGFFGGGGGGT",
-    "TGGGFFGGGHHOT",
-    "TGGGGGGGGHHHT",
     "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
     "TTTTTTTTTTTTT",
 ];
 
-// Привязка дома к двери (координаты тайла двери в деревне) → house id
+// Привязка домов к дверям (col,row) — нижний левый угол каждого дома
 const VILLAGE_HOUSES = [
-    { id: 'smith',  doorX: 3,  doorY: 1,  name: 'Кузница',        npcName: 'Кузнец',  icon: '🛠️' },
-    { id: 'elf',    doorX: 10, doorY: 1,  name: 'Шатёр эльфа',    npcName: 'Эльф',    icon: '🏹' },
-    { id: 'witch',  doorX: 11, doorY: 8,  name: 'Башня колдуньи', npcName: 'Колдунья', icon: '🔮' }
+    { id: 'smith', doorX: 1, doorY: 4, name: () => getName('buildings','smith').name || 'Кузница',     icon: () => getName('buildings','smith').icon || '🔥' },
+    { id: 'elf',   doorX: 5, doorY: 4, name: () => getName('buildings','elf').name  || 'Шатёр эльфа', icon: () => getName('buildings','elf').icon  || '🌿' },
+    { id: 'witch', doorX: 9, doorY: 4, name: () => getName('buildings','witch').name || 'Башня',       icon: () => getName('buildings','witch').icon || '✨' }
 ];
 
 function parseVillage(raw) {

@@ -126,16 +126,29 @@ class Player {
         saveGame(true);
     }
     
-    // Найти ближайшего врага в радиусе (в тайлах)
-    _nearestEnemy(enemies, rangeTiles) {
+    // Найти ближайшего врага в радиусе (в тайлах).
+    // requireLOS = true для дальних атак (стрела/файрбол) — проверяем видимость через стены.
+    _nearestEnemy(enemies, rangeTiles, requireLOS = false) {
         let best = null, bestDist = Infinity;
         const rangePixels = rangeTiles * CFG.TILE;
+        const ptx = Math.floor(this.x / CFG.TILE);
+        const pty = Math.floor(this.y / CFG.TILE);
+        const tm  = G.depth > 0 ? getCurrentTM() : null;
+
         for (const e of enemies) {
             if (!e.alive) continue;
             const ex = e.x * CFG.TILE + CFG.TILE/2;
             const ey = e.y * CFG.TILE + CFG.TILE/2;
             const d = Math.hypot(this.x - ex, this.y - ey);
-            if (d < rangePixels && d < bestDist) { best = e; bestDist = d; }
+            if (d >= rangePixels || d >= bestDist) continue;
+            // Проверка видимости только в подземелье и только для дальних атак
+            if (requireLOS && tm) {
+                const etx = Math.floor(e.x);
+                const ety = Math.floor(e.y);
+                if (!hasLineOfSight(ptx, pty, etx, ety, tm)) continue;
+            }
+            best = e;
+            bestDist = d;
         }
         return best;
     }
@@ -215,7 +228,7 @@ class Player {
 
         } else if (this.atkType === 'arrow') {
             // Лучник: стреляет стрелой (или веером, если активна способность)
-            const target = this._nearestEnemy(enemies, this.atkRange);
+            const target = this._nearestEnemy(enemies, this.atkRange, true);
             if (!target) return;
             const ab = ABILITIES.archer;
             this.acd = volleyActive ? Math.round(this.atkCD / ab.atkSpeedMult) : this.atkCD;
@@ -240,9 +253,9 @@ class Player {
                 projs.push({
                     x: this.x, y: this.y,
                     vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-                    dmg: this.atk,
+                    dmg: this.atk, angle: ang,
                     alive: true, life: Math.ceil(this.atkRange * CFG.TILE / spd) + 5,
-                    trail: [], type: 'arrow',
+                    trail: [], type: 'arrow', spriteFrame: 0, spriteTimer: 0,
                     color: volleyActive ? '#ffaa33' : '#e8c840',
                     trailColor: volleyActive ? '#ff7700' : '#c8a020'
                 });
@@ -251,7 +264,7 @@ class Player {
 
         } else if (this.atkType === 'fireball') {
             // Маг: огненный шар, тратит ману
-            const target = this._nearestEnemy(enemies, this.atkRange);
+            const target = this._nearestEnemy(enemies, this.atkRange, true);
             if (!target) return;
             if (this.mp < this.mpCost) return; // нет маны — не стреляет
             this.acd = this.atkCD;
@@ -266,9 +279,9 @@ class Player {
             projs.push({
                 x: this.x, y: this.y,
                 vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-                dmg: Math.round(this.atk * 1.4),
+                dmg: Math.round(this.atk * 1.4), angle: ang,
                 alive: true, life: Math.ceil(this.atkRange * CFG.TILE / spd) + 5,
-                trail: [], type: 'fireball',
+                trail: [], type: 'fireball', spriteFrame: 0, spriteTimer: 0,
                 color: '#ff6622', trailColor: '#ff4400'
             });
             sound.play('portal');
@@ -403,19 +416,18 @@ class Player {
             this.spriteTimer = 0;
         }
 
-        // FPS анимаций (кадров в секунду):
-        const ANIM_FPS = { idle: 6, walk: 10, attack: 14, ability: 12, death: 5 };
-        const animFps = ANIM_FPS[this.spriteAnim] || 8;
+        // FPS и число кадров из конфига, fallback на хардкод
+        const cfg = getAnimConfig(HERO_SPRITE_KEYS[this.cls] || 'hero_warrior', this.spriteAnim);
+        const animFps  = cfg ? cfg.fps  : ({ idle:6, walk:10, attack:14, ability:12, death:5 }[this.spriteAnim] || 8);
+        const maxCols  = cfg ? cfg.cols : SPRITE_COLS;
         this.spriteTimer += dt;
-        const framesPerTick = 60 / animFps; // сколько тиков на 1 кадр
+        const framesPerTick = 60 / animFps;
         if (this.spriteTimer >= framesPerTick) {
             this.spriteTimer -= framesPerTick;
-            const maxFrame = SPRITE_COLS - 1;
             if (this.spriteAnim === 'death') {
-                // death не зацикливается — держим последний кадр
-                this.spriteFrame = Math.min(this.spriteFrame + 1, maxFrame);
+                this.spriteFrame = Math.min(this.spriteFrame + 1, maxCols - 1);
             } else {
-                this.spriteFrame = (this.spriteFrame + 1) % SPRITE_COLS;
+                this.spriteFrame = (this.spriteFrame + 1) % maxCols;
             }
         }
         // ─────────────────────────────────────────────────────────────
@@ -581,9 +593,12 @@ class Player {
 
         const cls = CLASSES[playerData.class];
         if (cls) {
+            const cn = getName('heroes', playerData.class);
+            const clsName = cn?.name || cls.name;
+            const clsIcon = cn?.icon || cls.icon;
             ctx.fillStyle = '#ffd700';
             ctx.font = `${8*SC}px sans-serif`;
-            ctx.fillText(cls.icon + ' ' + cls.name, px, py - size * 0.56 - 10*SC);
+            ctx.fillText(clsIcon + ' ' + clsName, px, py - size * 0.56 - 10*SC);
         }
 
         // HP/MP полоски
