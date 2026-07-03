@@ -113,6 +113,7 @@ function init() {
     initMenuHandlers();
     initSettingsHandlers();
     initPauseHandlers();
+    initAdminPinHandlers();
     
     // Запуск цикла
     requestAnimationFrame(loop);
@@ -867,7 +868,7 @@ function loop(timestamp) {
         ctxBtn.innerHTML = '⚔️ Подземелье';
     } else if(ctxMode === 'enter-house') {
         ctxBtn.className = 'portal visible';
-        ctxBtn.innerHTML = '🚪 Войти: ' + ctxHouse.name;
+        ctxBtn.innerHTML = '🚪 Войти: ' + (typeof ctxHouse.name === 'function' ? ctxHouse.name() : ctxHouse.name);
     } else if(ctxMode === 'exit-house') {
         ctxBtn.className = 'exit visible';
         ctxBtn.innerHTML = '🌿 Выйти в деревню';

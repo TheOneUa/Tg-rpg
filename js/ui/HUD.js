@@ -47,7 +47,7 @@ function hudUpdate(p) {
     if (G.location === 'dungeon') locText = '⚔ Подземелье';
     else if (G.location === 'house') {
         const h = VILLAGE_HOUSES.find(h => h.id === G.currentHouse);
-        locText = '🚪 ' + (h ? h.name : 'Дом');
+        locText = '🚪 ' + (typeof h.name === 'function' ? h.name() : h.name || 'Дом');
     }
     HUD_ELEMENTS.sloc.textContent = locText;
     HUD_ELEMENTS.sdepth.textContent = '⚔ ' + G.depth;
