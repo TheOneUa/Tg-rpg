@@ -21,10 +21,11 @@ const HUD_ELEMENTS = {
     cd: [0,1,2,3].map(i => document.getElementById('cd' + i))
 };
 
-const SLOT_KEYS = ['hpPot', 'mpPot', 'sword', 'shield'];
+const SLOT_KEYS = ['hpPot', 'mpPot'];
 
 function updateSlotCooldowns(cds) {
-    for(let i=0; i<4; i++) {
+    for(let i=0; i<2; i++) {
+        if(!HUD_ELEMENTS.cd[i]) continue;
         if(cds[i] > 0) {
             HUD_ELEMENTS.cd[i].style.opacity = '1';
             HUD_ELEMENTS.cd[i].textContent = (cds[i]/60*10|0)/10 + 's';
@@ -61,10 +62,8 @@ function hudUpdate(p) {
     const achDone = ACHIEVEMENTS.filter(a => achievements[a.id]).length;
     HUD_ELEMENTS.sa.textContent = '🏆' + achDone + '/' + ACHIEVEMENTS.length;
     
-    HUD_ELEMENTS.qv[0].textContent = 'x' + p.bag.hpPot;
-    HUD_ELEMENTS.qv[1].textContent = 'x' + p.bag.mpPot;
-    HUD_ELEMENTS.qv[2].textContent = 'x' + p.bag.sword;
-    HUD_ELEMENTS.qv[3].textContent = 'x' + p.bag.shield;
+    HUD_ELEMENTS.qv[0].textContent = 'x' + (p.bag.hpPot || 0);
+    HUD_ELEMENTS.qv[1].textContent = 'x' + (p.bag.mpPot || 0);
 }
 
 // Обработчики слотов (touchstart для поддержки мульти-тач на iOS)

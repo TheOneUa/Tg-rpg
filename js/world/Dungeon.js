@@ -102,7 +102,7 @@ function generateDungeon(depth) {
     for(let i=0; i<numItems && i<spawnCells.length; i++) {
         const cell = spawnCells[spawnCells.length - 1 - i];
         if(!cell) break;
-        const types = ['hpPot','mpPot','sword','shield','gold'];
+        const types = ['hpPot','mpPot','gold'];
         const type = types[Math.floor(Math.random()*types.length)];
         items.push(new Item(cell.x, cell.y, type));
     }

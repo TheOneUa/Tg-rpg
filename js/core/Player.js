@@ -16,9 +16,15 @@ class Player {
         this.exp = 0;
         this.exn = 100;
         this.gold = 0;
-        this.bag = { hpPot: 0, mpPot: 0, sword: 0, shield: 0 };
+        this.bag = { hpPot: 0, mpPot: 0 }; // только расходники
         this.resources = { ore: 0, wood: 0, essence: 0 };
         this.masterLevels = { smith: { weapon: 0, armor: 0 }, elf: { weapon: 0, armor: 0 }, witch: { weapon: 0, armor: 0 } };
+        // Инвентарь предметов (массив { type, ... })
+        this.inventory = [];
+        // Экипировка (слоты)
+        this.equipment = { weapon: null, armor: null, ring: null };
+        // Бонусы от экипировки (пересчитываются при надевании/снятии)
+        this.eqBonus = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0 };
         this.acd = 0;
         this.scd = 0;
         this.flash = 0;
@@ -87,8 +93,8 @@ class Player {
     useSlot(slot, floats) {
         const idx = SLOT_KEYS.indexOf(slot);
         if (idx >= 0 && this.slotCooldowns[idx] > 0) return;
-        if (this.bag[slot] <= 0) return;
-        
+        if (!this.bag[slot] || this.bag[slot] <= 0) return;
+
         if (slot === 'hpPot') {
             if (this.hp >= this.maxhp) return;
             const h = Math.min(40, this.maxhp - this.hp);
@@ -105,23 +111,57 @@ class Player {
             floats.push(new FText(this.x, this.y - CFG.TILE, '+' + m + ' MP', '#3c78dc'));
             sound.play('pickup');
             tgVibrate('light');
-        } else if (slot === 'sword') {
-            this.atk += 10;
-            this.bag.sword--;
-            floats.push(new FText(this.x, this.y - CFG.TILE, '⚔ +10 атака', '#e68220'));
-            sound.play('pickup');
-            tgVibrate('medium');
-        } else if (slot === 'shield') {
-            this.def += 4;
-            this.bag.shield--;
-            floats.push(new FText(this.x, this.y - CFG.TILE, '🛡 +4 защита', '#8090e0'));
-            sound.play('pickup');
-            tgVibrate('medium');
         }
         if (idx >= 0) this.slotCooldowns[idx] = 20;
         saveGame(true);
     }
-    
+
+    // Пересчитать бонусы от надетой экипировки
+    recalcEqBonus() {
+        const b = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0 };
+        for (const [, itemId] of Object.entries(this.equipment)) {
+            if (!itemId) continue;
+            const def = ITEM_DEFS[itemId];
+            if (!def) continue;
+            if (def.atk) b.atk += def.atk;
+            if (def.def) b.def += def.def;
+            if (def.hp)  b.hp  += def.hp;
+            if (def.mp)  b.mp  += def.mp;
+            if (def.spd) b.spd += def.spd;
+        }
+        this.eqBonus = b;
+    }
+
+    // Надеть предмет из инвентаря (по индексу)
+    equip(invIdx, floats) {
+        const item = this.inventory[invIdx];
+        if (!item) return;
+        const def = ITEM_DEFS[item.type];
+        if (!def || def.slot === 'consumable') return;
+        const slot = def.slot; // 'weapon'|'armor'|'ring'
+
+        // Снять текущий предмет в этом слоте
+        if (this.equipment[slot]) {
+            this.inventory.push({ type: this.equipment[slot] });
+        }
+        this.equipment[slot] = item.type;
+        this.inventory.splice(invIdx, 1);
+        this.recalcEqBonus();
+        if (floats) floats.push(new FText(this.x, this.y - CFG.TILE, def.icon + ' Надет', '#ffd700', 13));
+        sound.play('pickup');
+        saveGame(true);
+    }
+
+    // Снять экипировку в слоте → в инвентарь
+    unequip(slot, floats) {
+        if (!this.equipment[slot]) return;
+        this.inventory.push({ type: this.equipment[slot] });
+        this.equipment[slot] = null;
+        this.recalcEqBonus();
+        if (floats) floats.push(new FText(this.x, this.y - CFG.TILE, 'Снято', '#aaa', 12));
+        saveGame(true);
+    }
+
     // Найти ближайшего врага в радиусе (в тайлах).
     // requireLOS = true для дальних атак (стрела/файрбол) — проверяем видимость через стены.
     _nearestEnemy(enemies, rangeTiles, requireLOS = false) {
@@ -448,14 +488,23 @@ class Player {
                 const ix = it.x * CFG.TILE + CFG.TILE/2;
                 const iy = it.y * CFG.TILE + CFG.TILE/2;
                 if (Math.hypot(this.x - ix, this.y - iy) < CFG.TILE * 0.85) {
+                    const def = ITEM_DEFS[it.type];
                     if (it.type === 'gold') {
-                        this.gold += 25;
-                        stats.totalGold += 25;
-                        floats.push(new FText(ix, iy - 24, '+25💰', '#ffd700'));
-                    } else {
+                        const goldAmt = 10 + Math.floor(Math.random() * 20);
+                        this.gold += goldAmt;
+                        stats.totalGold += goldAmt;
+                        floats.push(new FText(ix, iy - 24, '+' + goldAmt + '💰', '#ffd700'));
+                    } else if (def && def.slot === 'consumable') {
                         this.bag[it.type] = (this.bag[it.type] || 0) + 1;
                         stats.itemsCollected++;
                         floats.push(new FText(ix, iy - 24, '+1 ' + it.icon, '#e6c832'));
+                    } else if (def) {
+                        // Экипируемый предмет — в инвентарь
+                        this.inventory.push({ type: it.type });
+                        stats.itemsCollected++;
+                        const rarityColor = def.rarity === 'epic' ? '#cc44ff' : def.rarity === 'rare' ? '#4499ff' : '#e6c832';
+                        floats.push(new FText(ix, iy - 24, def.icon + ' ' + def.name, rarityColor, 13));
+                        showQNotif(def.icon + ' Подобран: ' + def.name);
                     }
                     for (let i = 0; i < 8; i++) parts.push(new Particle(ix, iy, it.col));
                     it.alive = false;

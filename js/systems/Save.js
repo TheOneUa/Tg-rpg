@@ -14,6 +14,7 @@ function getSaveData() {
         atk: p.atk, def: p.def,
         lv: p.lv, exp: p.exp, exn: p.exn,
         gold: p.gold, bag: p.bag, statPoints: p.statPoints || 0,
+        inventory: p.inventory || [], equipment: p.equipment || { weapon:null, armor:null, ring:null },
         resources: p.resources,
         masterLevels: p.masterLevels,
         depth: G.depth,
@@ -47,6 +48,9 @@ function applySaveData(d) {
     p.exn = d.exn || 100;
     p.gold = d.gold || 0;
     p.statPoints = d.statPoints || 0;
+    p.inventory  = d.inventory  || [];
+    p.equipment  = d.equipment  || { weapon: null, armor: null, ring: null };
+    p.recalcEqBonus();
     p.bag = d.bag || { hpPot:0, mpPot:0, sword:0, shield:0 };
     p.resources = d.resources || { ore: 0, wood: 0, essence: 0 };
     p.masterLevels = d.masterLevels || { smith: { weapon: 0, armor: 0 }, elf: { weapon: 0, armor: 0 }, witch: { weapon: 0, armor: 0 } };

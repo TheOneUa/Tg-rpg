@@ -44,28 +44,52 @@ function showQNotif(text) {
 }
 
 // ============================================================
-//  ДРОП РЕСУРСОВ (Руда / Древесина / Эссенция)
+//  ДРОП ЛУТА ИЗ МОНСТРОВ
 // ============================================================
 const RESOURCE_KEYS = ['ore', 'wood', 'essence'];
-function dropResourceFromEnemy(e, floats) {
+
+function dropLootFromEnemy(e, floats) {
     const p = G.p;
-    let resKey = null, amount = 0;
+    const ex = e.x * CFG.TILE + CFG.TILE/2;
+    const ey = e.y * CFG.TILE + CFG.TILE/2;
+
+    // 1. Ресурсы (Руда/Древесина/Эссенция)
+    let resKey = null, resAmt = 0;
     if (e.isBoss) {
-        // Боссы — гарантированный дроп, 2-3 шт случайного ресурса
         resKey = RESOURCE_KEYS[Math.floor(Math.random() * RESOURCE_KEYS.length)];
-        amount = 2 + Math.floor(Math.random() * 2);
+        resAmt = 2 + Math.floor(Math.random() * 2);
     } else if (Math.random() < 0.08) {
-        // Обычные враги — редкий дроп (8%), 1 шт
         resKey = RESOURCE_KEYS[Math.floor(Math.random() * RESOURCE_KEYS.length)];
-        amount = 1;
+        resAmt = 1;
     }
     if (resKey) {
-        p.resources[resKey] = (p.resources[resKey] || 0) + amount;
-        const info = RESOURCES[resKey];
-        const ex = e.x * CFG.TILE + CFG.TILE/2;
-        const ey = e.y * CFG.TILE + CFG.TILE/2;
-        floats.push(new FText(ex, ey - CFG.TILE * 2.1, info.icon + ' +' + amount, '#88e0ff', 14));
+        p.resources[resKey] = (p.resources[resKey] || 0) + resAmt;
+        floats.push(new FText(ex, ey - CFG.TILE * 2.2, RESOURCES[resKey].icon + ' +' + resAmt, '#88e0ff', 13));
     }
+
+    // 2. Предметы по таблице лута — появляются на полу
+    const drops = rollLoot(e.isBoss, G.depth);
+    drops.forEach((itemId, i) => {
+        // Раскладываем предметы рядом с позицией врага
+        const ox = Math.round(e.x + (i % 2 === 0 ? -1 : 1) * (Math.random() * 0.8));
+        const oy = Math.round(e.y + (i > 1 ? 1 : 0));
+        // Проверяем что клетка проходима
+        const tm = G.dungeonGrid;
+        const tx = Math.max(0, Math.min(CFG.D_COLS-1, ox));
+        const ty = Math.max(0, Math.min(CFG.D_ROWS-1, oy));
+        if (tm && !SOLID.has(tm[ty][tx])) {
+            G.items.push(new Item(tx, ty, itemId));
+        } else {
+            G.items.push(new Item(Math.round(e.x), Math.round(e.y), itemId));
+        }
+        const def = ITEM_DEFS[itemId];
+        if (def) floats.push(new FText(ex, ey - CFG.TILE * 1.6 - i*16, def.icon + ' ' + def.name, '#ffd700', 12));
+    });
+}
+
+// Оставляем для обратной совместимости
+function dropResourceFromEnemy(e, floats) {
+    dropLootFromEnemy(e, floats);
 }
 
 // ============================================================
@@ -114,6 +138,16 @@ function init() {
     initSettingsHandlers();
     initPauseHandlers();
     initAdminPinHandlers();
+
+    // Экран персонажа — вкладки и кнопка закрытия
+    document.querySelectorAll('.stat-tab').forEach(tab => {
+        bindTapButton(tab, () => {
+            _activeCharTab = tab.dataset.tab;
+            _renderCharScreen();
+        });
+    });
+    bindTapButton(document.getElementById('stat-close'), _closeCharScreen);
+    bindTapButton(document.getElementById('hud-stat-btn'), openStatScreen);
     
     // Запуск цикла
     requestAnimationFrame(loop);
@@ -451,85 +485,179 @@ const STAT_GAINS = {
     spd: { warrior: 0.15, archer: 0.25, mage: 0.25, icon: '💨', name: 'Скорость', field: 'spd' },
 };
 
-let _statPending = {}; // { hp:0, mp:0, atk:0, def:0, spd:0 } — вложено в этот раз
+let _statPending = {};
+let _activeCharTab = 'stats';
 
 function openStatScreen() {
-    const p = G.p;
-    if (!p.statPoints || p.statPoints <= 0) return;
     _statPending = { hp: 0, mp: 0, atk: 0, def: 0, spd: 0 };
-    _renderStatScreen();
+    _activeCharTab = G.p.statPoints > 0 ? 'stats' : 'equip';
+    _renderCharScreen();
     document.getElementById('stat-screen').classList.add('open');
 }
 
-function _renderStatScreen() {
+function _closeCharScreen() {
+    document.getElementById('stat-screen').classList.remove('open');
+    _updateHudStatBtn();
+}
+
+function _renderCharScreen() {
     const p = G.p;
     const cls = p.cls || 'warrior';
-    const remaining = (p.statPoints || 0) - Object.values(_statPending).reduce((a,b) => a+b, 0);
 
-    document.getElementById('stat-level').textContent = 'Уровень ' + p.lv;
-    document.getElementById('stat-points-left').querySelector('span').textContent = remaining;
+    // Заголовок
+    document.getElementById('stat-title').textContent = '🎒 ' + (p.name || 'Персонаж') + ' · Ур.' + p.lv;
+
+    // Вкладки
+    document.querySelectorAll('.stat-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === _activeCharTab);
+    });
+    document.querySelectorAll('.stat-tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === 'stat-tab-' + _activeCharTab);
+    });
+
+    if (_activeCharTab === 'stats') _renderStatsTab(p, cls);
+    else if (_activeCharTab === 'equip') _renderEquipTab(p);
+    else if (_activeCharTab === 'inv') _renderInvTab(p);
+}
+
+function _renderStatsTab(p, cls) {
+    const remaining = (p.statPoints || 0) - Object.values(_statPending).reduce((a,b) => a+b, 0);
+    const wrap = document.getElementById('stat-points-wrap');
+    wrap.style.display = (p.statPoints > 0) ? '' : 'none';
+    document.getElementById('stat-points-left').textContent = remaining;
+    document.getElementById('stat-level').textContent = 'Уровень ' + p.lv + '  EXP: ' + p.exp + '/' + p.exn;
 
     const list = document.getElementById('stat-list');
+    const eq = p.eqBonus || {};
     list.innerHTML = Object.entries(STAT_GAINS).map(([key, sg]) => {
         const gain = sg[cls];
-        const cur = key === 'hp' ? p.maxhp : key === 'mp' ? p.maxmp : p[sg.field];
+        const base = key === 'hp' ? p.maxhp : key === 'mp' ? p.maxmp : p[sg.field];
+        const eqVal = eq[key] || 0;
         const pending = _statPending[key] || 0;
-        const spdFmt = v => v.toFixed(2);
-        const curFmt = key === 'spd' ? spdFmt(cur) : Math.round(cur);
-        const gainFmt = key === 'spd' ? '+' + spdFmt(gain * pending) : '+' + (gain * pending);
+        const fmt = v => key === 'spd' ? v.toFixed(2) : Math.round(v);
         return `<div class="stat-row">
             <span class="stat-icon">${sg.icon}</span>
             <div class="stat-info">
                 <div class="stat-name">${sg.name}</div>
-                <div class="stat-val">${curFmt}${pending > 0 ? ' <span class="stat-gain">(' + gainFmt + ')</span>' : ''}</div>
+                <div class="stat-val">${fmt(base)}${eqVal ? ' <span style="color:#4499ff">+' + fmt(eqVal) + '</span>' : ''}${pending > 0 ? ' <span class="stat-gain">(+' + fmt(gain * pending) + ')</span>' : ''}</div>
             </div>
-            <button class="stat-btn" data-stat="${key}" ${remaining <= 0 ? 'disabled' : ''}>+</button>
+            ${p.statPoints > 0 ? `<button class="stat-btn" data-stat="${key}" ${remaining <= 0 ? 'disabled' : ''}>+</button>` : ''}
         </div>`;
     }).join('');
 
-    // Слушатели
     list.querySelectorAll('.stat-btn').forEach(btn => {
         bindTapButton(btn, () => {
-            const key = btn.dataset.stat;
             const rem = (p.statPoints || 0) - Object.values(_statPending).reduce((a,b) => a+b, 0);
             if (rem <= 0) return;
-            _statPending[key] = (_statPending[key] || 0) + 1;
-            _renderStatScreen();
+            _statPending[btn.dataset.stat] = (_statPending[btn.dataset.stat] || 0) + 1;
+            _renderStatsTab(p, cls);
         });
     });
 
-    // Кнопка подтверждения
-    const confirmBtn = document.getElementById('stat-confirm');
     const spent = Object.values(_statPending).reduce((a,b) => a+b, 0);
-    confirmBtn.textContent = spent > 0 ? '✅ Применить' : '⏭ Позже';
-    confirmBtn.onclick = () => _applyStats();
+    const confirmBtn = document.getElementById('stat-confirm');
+    confirmBtn.style.display = p.statPoints > 0 ? '' : 'none';
+    confirmBtn.textContent = spent > 0 ? '✅ Применить' : '⏭ Пропустить';
+    confirmBtn.onclick = () => {
+        const s = Object.values(_statPending).reduce((a,b) => a+b, 0);
+        for (const [key, pts] of Object.entries(_statPending)) {
+            if (!pts) continue;
+            const sg = STAT_GAINS[key];
+            const gain = sg[cls] * pts;
+            if (key === 'hp') { p.maxhp += gain; p.hp = Math.min(p.hp + gain, p.maxhp); }
+            else if (key === 'mp') { p.maxmp += gain; p.mp = Math.min(p.mp + gain, p.maxmp); }
+            else p[sg.field] = +(p[sg.field] + gain).toFixed(2);
+        }
+        p.statPoints = (p.statPoints || 0) - s;
+        _statPending = { hp: 0, mp: 0, atk: 0, def: 0, spd: 0 };
+        if (s > 0) showQNotif('✨ Статы прокачаны!');
+        saveGame(true);
+        _renderCharScreen();
+    };
+
+    const hint = document.getElementById('stat-hint');
+    hint.textContent = p.statPoints > 0 ? 'Нераспределено очков: ' + p.statPoints : '';
 }
 
-function _applyStats() {
-    const p = G.p;
-    const cls = p.cls || 'warrior';
-    const spent = Object.values(_statPending).reduce((a,b) => a+b, 0);
+function _renderEquipTab(p) {
+    const EQ_SLOTS = [
+        { id: 'weapon', name: 'Оружие',   icon: '⚔️' },
+        { id: 'armor',  name: 'Броня',     icon: '🛡️' },
+        { id: 'ring',   name: 'Кольцо',    icon: '💍' },
+    ];
+    const eq = p.equipment || {};
+    const bonus = p.eqBonus || {};
 
-    for (const [key, pts] of Object.entries(_statPending)) {
-        if (pts <= 0) continue;
-        const sg = STAT_GAINS[key];
-        const gain = sg[cls] * pts;
-        if (key === 'hp') {
-            p.maxhp += gain;
-            p.hp = Math.min(p.hp + gain, p.maxhp);
-        } else if (key === 'mp') {
-            p.maxmp += gain;
-            p.mp = Math.min(p.mp + gain, p.maxmp);
-        } else {
-            p[sg.field] = +(p[sg.field] + gain).toFixed(2);
-        }
+    document.getElementById('eq-slots').innerHTML = EQ_SLOTS.map(sl => {
+        const itemId = eq[sl.id];
+        const def = itemId ? ITEM_DEFS[itemId] : null;
+        const stats = def ? _itemStatStr(def) : '';
+        return `<div class="eq-slot-row">
+            <span class="eq-slot-icon">${def ? def.icon : sl.icon}</span>
+            <div class="eq-slot-info">
+                <div class="eq-slot-name">${def ? def.name : sl.name + ' — пусто'}</div>
+                <div class="eq-slot-stats">${stats}</div>
+            </div>
+            ${def ? `<button class="eq-slot-btn" data-slot="${sl.id}">Снять</button>` : ''}
+        </div>`;
+    }).join('');
+
+    document.querySelectorAll('.eq-slot-btn').forEach(btn => {
+        bindTapButton(btn, () => {
+            p.unequip(btn.dataset.slot, G.floats);
+            _renderCharScreen();
+        });
+    });
+
+    const bonusLines = Object.entries(bonus).filter(([,v]) => v > 0)
+        .map(([k,v]) => STAT_GAINS[k]?.icon + ' +' + (k==='spd' ? v.toFixed(2) : Math.round(v)));
+    document.getElementById('eq-bonus-info').innerHTML = bonusLines.length
+        ? 'Бонусы: ' + bonusLines.map(l => `<span>${l}</span>`).join(' ')
+        : 'Наденьте предметы для получения бонусов';
+}
+
+function _renderInvTab(p) {
+    const inv = p.inventory || [];
+    const grid = document.getElementById('inv-grid');
+    const empty = document.getElementById('inv-empty');
+
+    if (!inv.length) {
+        grid.innerHTML = '';
+        empty.style.display = '';
+        return;
     }
+    empty.style.display = 'none';
+    grid.innerHTML = inv.map((item, idx) => {
+        const def = ITEM_DEFS[item.type] || {};
+        return `<div class="inv-item rarity-${def.rarity||'common'}" data-idx="${idx}">
+            <span class="inv-item-icon">${def.icon || '❓'}</span>
+            <div class="inv-item-name">${def.name || item.type}</div>
+            <div class="inv-item-stats">${_itemStatStr(def)}</div>
+        </div>`;
+    }).join('');
 
-    p.statPoints = (p.statPoints || 0) - spent;
-    document.getElementById('stat-screen').classList.remove('open');
-    _updateHudStatBtn();
-    saveGame(true);
-    if (spent > 0) showQNotif('✨ Статы прокачаны!');
+    grid.querySelectorAll('.inv-item').forEach(el => {
+        bindTapButton(el, () => {
+            const idx = parseInt(el.dataset.idx);
+            const item = p.inventory[idx];
+            if (!item) return;
+            const def = ITEM_DEFS[item.type];
+            if (!def || def.slot === 'consumable') return;
+            p.equip(idx, G.floats);
+            _renderCharScreen();
+        });
+    });
+}
+
+function _itemStatStr(def) {
+    if (!def) return '';
+    const parts = [];
+    if (def.atk) parts.push('⚔️+' + def.atk);
+    if (def.def) parts.push('🛡️+' + def.def);
+    if (def.hp)  parts.push('❤️+' + def.hp);
+    if (def.mp)  parts.push('💧+' + def.mp);
+    if (def.spd) parts.push('💨+' + def.spd);
+    return parts.join(' ');
 }
 
 function _updateHudStatBtn() {
@@ -537,9 +665,10 @@ function _updateHudStatBtn() {
     const btn = document.getElementById('hud-stat-btn');
     const count = p.statPoints || 0;
     if (btn) {
-        btn.classList.toggle('visible', count > 0 && gameStarted);
+        btn.classList.toggle('visible', gameStarted);
         const span = btn.querySelector('span');
-        if (span) span.textContent = count;
+        if (span) span.textContent = count > 0 ? count : '';
+        btn.querySelector('span') && (btn.innerHTML = count > 0 ? '⬆️ +' + count : '🎒');
     }
 }
 

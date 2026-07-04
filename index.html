@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>⚔️ TG-RPG v5.3.5</title>
+    <title>TG-RPG v5.3.6</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -229,18 +229,41 @@
 <button id="pause-btn">☰</button>
 
 <!-- ЭКРАН ПАУЗЫ -->
-<!-- ЭКРАН РАСПРЕДЕЛЕНИЯ СТАТОВ -->
+<!-- ЭКРАН ПЕРСОНАЖА (Статы / Инвентарь / Экипировка) -->
 <div id="stat-screen">
-    <div class="stat-title">⬆️ Повышение уровня!</div>
-    <div class="stat-level" id="stat-level">Уровень 2</div>
-    <div class="stat-points-left">Очков осталось: <span id="stat-points-left">3</span></div>
-
-    <div class="stat-list" id="stat-list">
-        <!-- Генерируется JS -->
+    <div class="stat-header">
+        <div class="stat-title" id="stat-title">🎒 Персонаж</div>
+        <button class="stat-close-btn" id="stat-close">✕</button>
     </div>
 
-    <button class="stat-confirm-btn" id="stat-confirm">✅ Подтвердить</button>
-    <div class="stat-hint">Очки можно распределить позже — нажми ⬆️ в HUD</div>
+    <div class="stat-tabs">
+        <div class="stat-tab active" data-tab="stats">⬆️ Статы</div>
+        <div class="stat-tab" data-tab="equip">🗡️ Экипировка</div>
+        <div class="stat-tab" data-tab="inv">🎒 Инвентарь</div>
+    </div>
+
+    <!-- Вкладка статов -->
+    <div id="stat-tab-stats" class="stat-tab-content active">
+        <div class="stat-level" id="stat-level">Уровень 1</div>
+        <div class="stat-points-left" id="stat-points-wrap" style="display:none">
+            Очков: <span id="stat-points-left">0</span>
+        </div>
+        <div class="stat-list" id="stat-list"></div>
+        <button class="stat-confirm-btn" id="stat-confirm">✅ Применить</button>
+        <div class="stat-hint" id="stat-hint"></div>
+    </div>
+
+    <!-- Вкладка экипировки -->
+    <div id="stat-tab-equip" class="stat-tab-content">
+        <div class="eq-slots" id="eq-slots"></div>
+        <div class="eq-bonus-info" id="eq-bonus-info"></div>
+    </div>
+
+    <!-- Вкладка инвентаря -->
+    <div id="stat-tab-inv" class="stat-tab-content">
+        <div class="inv-grid" id="inv-grid"></div>
+        <div class="inv-empty" id="inv-empty" style="display:none">Инвентарь пуст</div>
+    </div>
 </div>
 
 <div id="pause-screen">
@@ -294,8 +317,6 @@
     <div id="quickbar">
         <div class="qsl" id="qs0"><div class="qsl-icon">🧪</div><div class="qsl-val" id="qv0">0</div><div class="qsl-label">HP</div><div class="qsl-cooldown" id="cd0"></div></div>
         <div class="qsl" id="qs1"><div class="qsl-icon">💧</div><div class="qsl-val" id="qv1">0</div><div class="qsl-label">MP</div><div class="qsl-cooldown" id="cd1"></div></div>
-        <div class="qsl" id="qs2"><div class="qsl-icon">⚔️</div><div class="qsl-val" id="qv2">0</div><div class="qsl-label">Меч</div><div class="qsl-cooldown" id="cd2"></div></div>
-        <div class="qsl" id="qs3"><div class="qsl-icon">🛡️</div><div class="qsl-val" id="qv3">0</div><div class="qsl-label">Щит</div><div class="qsl-cooldown" id="cd3"></div></div>
     </div>
     <!-- Джойстик + кнопки -->
     <div id="ctrl-bottom">
