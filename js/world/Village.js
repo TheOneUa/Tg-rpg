@@ -1,14 +1,13 @@
 // ============================================================
 //  VILLAGE
 // ============================================================
-// Три дома 4×4 в верхней части карты.
-// H = стена дома (непроходимо), O = дверь (нижний левый угол дома)
+// Три дома 2×2: H=стена, O=дверь (нижний правый угол)
 const VILLAGE_RAW = [
     "TTTTTTTTTTTTT",
-    "THHHHHHHHHHHH",
-    "THHHHHHHHHHHH",
-    "THHHHHHHHHHHH",
-    "TOHHHOHHHOHHH",
+    "THHGGHHGGHHGT",
+    "THOGGHOGGHOGT",
+    "TGGGGGGGGGGGT",
+    "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
     "TGGGGGGGGGGGT",
     "TGGGGFFFGGGGT",
@@ -19,11 +18,11 @@ const VILLAGE_RAW = [
     "TTTTTTTTTTTTT",
 ];
 
-// Привязка домов к дверям (col,row) — нижний левый угол каждого дома
+// Дверь — нижний правый угол каждого дома 2×2
 const VILLAGE_HOUSES = [
-    { id: 'smith', doorX: 1, doorY: 4, name: () => getName('buildings','smith').name || 'Кузница',     icon: () => getName('buildings','smith').icon || '🔥' },
-    { id: 'elf',   doorX: 5, doorY: 4, name: () => getName('buildings','elf').name  || 'Шатёр эльфа', icon: () => getName('buildings','elf').icon  || '🌿' },
-    { id: 'witch', doorX: 9, doorY: 4, name: () => getName('buildings','witch').name || 'Башня',       icon: () => getName('buildings','witch').icon || '✨' }
+    { id: 'smith', doorX: 2,  doorY: 2, name: () => getName('buildings','smith').name || 'Кузница',        icon: () => getName('buildings','smith').icon || '🔥' },
+    { id: 'elf',   doorX: 6,  doorY: 2, name: () => getName('buildings','elf').name   || 'Шатёр эльфа',    icon: () => getName('buildings','elf').icon   || '🌿' },
+    { id: 'witch', doorX: 10, doorY: 2, name: () => getName('buildings','witch').name  || 'Башня колдуньи', icon: () => getName('buildings','witch').icon  || '✨' }
 ];
 
 function parseVillage(raw) {

@@ -36,6 +36,7 @@ class Player {
         this.atkType = 'melee';
         this.mpCost = 0;
         this.autoAtkTimer = 0;
+        this.statPoints = 0; // нераспределённые очки статов
         // Способность (вторая кнопка)
         this.abilityCD = 0;       // текущий кулдаун (кадры)
         this.abilityActive = 0;   // оставшиеся кадры активного эффекта (0 = неактивна)
@@ -62,30 +63,25 @@ class Player {
         this.atkType = d.atkType;
         this.mpCost = d.mpCost;
         this.autoAtkTimer = 0;
+        this.statPoints = 0; // нераспределённые очки статов
     }
     
     lvup(floats) {
         this.lv++;
         stats.maxLevel = Math.max(stats.maxLevel, this.lv);
         this.exn = this.exn * 1.5 | 0;
-        // Рост характеристик зависит от класса
-        const hpGain  = this.cls === 'warrior' ? 28 : this.cls === 'archer' ? 18 : 12;
-        const mpGain  = this.cls === 'mage'    ? 18 : this.cls === 'archer' ? 10 : 5;
-        const atkGain = this.cls === 'warrior' ? 6  : this.cls === 'mage'   ? 5  : 5;
-        const defGain = this.cls === 'warrior' ? 2  : 1;
-        this.maxhp += hpGain;
-        this.hp = this.maxhp;
-        this.maxmp += mpGain;
-        this.mp = this.maxmp;
-        this.atk += atkGain;
-        this.def += defGain;
+        // Выдаём очки статов — игрок распределяет сам
+        this.statPoints = (this.statPoints || 0) + 3;
         this.blockChance = Math.min(0.3, 0.1 + this.lv * 0.008);
         this.dodgeChance = Math.min(0.15, 0.05 + this.lv * 0.004);
-        floats.push(new FText(this.x, this.y - CFG.TILE, 'Уровень ' + this.lv + '! ↑', '#ffd700', 20));
+        floats.push(new FText(this.x, this.y - CFG.TILE, '✨ Уровень ' + this.lv + '!', '#ffd700', 20));
+        floats.push(new FText(this.x, this.y - CFG.TILE * 2, '+3 очка статов', '#88ffcc', 15));
         sound.play('levelup');
         tgVibrate('heavy');
         checkAchievements();
         saveGame(true);
+        // Открываем экран распределения статов
+        openStatScreen();
     }
     
     useSlot(slot, floats) {
@@ -133,7 +129,9 @@ class Player {
         const rangePixels = rangeTiles * CFG.TILE;
         const ptx = Math.floor(this.x / CFG.TILE);
         const pty = Math.floor(this.y / CFG.TILE);
-        const tm  = G.depth > 0 ? getCurrentTM() : null;
+        // Используем dungeonGrid напрямую — getCurrentTM() может вернуть карту деревни
+        const tm = (requireLOS && G.location === 'dungeon' && G.dungeonGrid)
+            ? G.dungeonGrid : null;
 
         for (const e of enemies) {
             if (!e.alive) continue;
@@ -141,8 +139,7 @@ class Player {
             const ey = e.y * CFG.TILE + CFG.TILE/2;
             const d = Math.hypot(this.x - ex, this.y - ey);
             if (d >= rangePixels || d >= bestDist) continue;
-            // Проверка видимости только в подземелье и только для дальних атак
-            if (requireLOS && tm) {
+            if (tm) {
                 const etx = Math.floor(e.x);
                 const ety = Math.floor(e.y);
                 if (!hasLineOfSight(ptx, pty, etx, ety, tm)) continue;

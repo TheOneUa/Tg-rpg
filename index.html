@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>⚔️ TG-RPG v5.3.3</title>
+    <title>⚔️ TG-RPG v5.3.5</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -226,9 +226,23 @@
 </div>
 
 <!-- КНОПКА ПАУЗЫ (в игре) -->
-<button id="pause-btn" style="display:none">☰</button>
+<button id="pause-btn">☰</button>
 
 <!-- ЭКРАН ПАУЗЫ -->
+<!-- ЭКРАН РАСПРЕДЕЛЕНИЯ СТАТОВ -->
+<div id="stat-screen">
+    <div class="stat-title">⬆️ Повышение уровня!</div>
+    <div class="stat-level" id="stat-level">Уровень 2</div>
+    <div class="stat-points-left">Очков осталось: <span id="stat-points-left">3</span></div>
+
+    <div class="stat-list" id="stat-list">
+        <!-- Генерируется JS -->
+    </div>
+
+    <button class="stat-confirm-btn" id="stat-confirm">✅ Подтвердить</button>
+    <div class="stat-hint">Очки можно распределить позже — нажми ⬆️ в HUD</div>
+</div>
+
 <div id="pause-screen">
     <div class="pause-title">⏸ Пауза</div>
     <button class="menu-btn menu-btn-secondary" id="pause-continue">
@@ -257,6 +271,7 @@
         <div class="st" id="slv">Ур.1</div>
         <div class="st" id="sat">⚔20 🛡5</div>
         <div class="st" id="s-gold">💰0</div>
+        <button id="hud-stat-btn" onclick="openStatScreen()">⬆️ +<span id="hud-stat-count">0</span></button>
     </div>
     <div class="sep"></div>
     <div class="hb">

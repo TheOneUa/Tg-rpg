@@ -439,6 +439,110 @@ function closePause() {
     document.getElementById('pause-screen').classList.remove('open');
 }
 
+// ============================================================
+//  ЭКРАН РАСПРЕДЕЛЕНИЯ СТАТОВ
+// ============================================================
+// Прибавки за 1 очко стата по классам
+const STAT_GAINS = {
+    hp:  { warrior: 20, archer: 15, mage: 10, icon: '❤️', name: 'Здоровье',  field: 'maxhp' },
+    mp:  { warrior: 5,  archer: 8,  mage: 15, icon: '💧', name: 'Мана',      field: 'maxmp' },
+    atk: { warrior: 5,  archer: 4,  mage: 4,  icon: '⚔️', name: 'Атака',     field: 'atk'  },
+    def: { warrior: 3,  archer: 2,  mage: 1,  icon: '🛡️', name: 'Защита',    field: 'def'  },
+    spd: { warrior: 0.15, archer: 0.25, mage: 0.25, icon: '💨', name: 'Скорость', field: 'spd' },
+};
+
+let _statPending = {}; // { hp:0, mp:0, atk:0, def:0, spd:0 } — вложено в этот раз
+
+function openStatScreen() {
+    const p = G.p;
+    if (!p.statPoints || p.statPoints <= 0) return;
+    _statPending = { hp: 0, mp: 0, atk: 0, def: 0, spd: 0 };
+    _renderStatScreen();
+    document.getElementById('stat-screen').classList.add('open');
+}
+
+function _renderStatScreen() {
+    const p = G.p;
+    const cls = p.cls || 'warrior';
+    const remaining = (p.statPoints || 0) - Object.values(_statPending).reduce((a,b) => a+b, 0);
+
+    document.getElementById('stat-level').textContent = 'Уровень ' + p.lv;
+    document.getElementById('stat-points-left').querySelector('span').textContent = remaining;
+
+    const list = document.getElementById('stat-list');
+    list.innerHTML = Object.entries(STAT_GAINS).map(([key, sg]) => {
+        const gain = sg[cls];
+        const cur = key === 'hp' ? p.maxhp : key === 'mp' ? p.maxmp : p[sg.field];
+        const pending = _statPending[key] || 0;
+        const spdFmt = v => v.toFixed(2);
+        const curFmt = key === 'spd' ? spdFmt(cur) : Math.round(cur);
+        const gainFmt = key === 'spd' ? '+' + spdFmt(gain * pending) : '+' + (gain * pending);
+        return `<div class="stat-row">
+            <span class="stat-icon">${sg.icon}</span>
+            <div class="stat-info">
+                <div class="stat-name">${sg.name}</div>
+                <div class="stat-val">${curFmt}${pending > 0 ? ' <span class="stat-gain">(' + gainFmt + ')</span>' : ''}</div>
+            </div>
+            <button class="stat-btn" data-stat="${key}" ${remaining <= 0 ? 'disabled' : ''}>+</button>
+        </div>`;
+    }).join('');
+
+    // Слушатели
+    list.querySelectorAll('.stat-btn').forEach(btn => {
+        bindTapButton(btn, () => {
+            const key = btn.dataset.stat;
+            const rem = (p.statPoints || 0) - Object.values(_statPending).reduce((a,b) => a+b, 0);
+            if (rem <= 0) return;
+            _statPending[key] = (_statPending[key] || 0) + 1;
+            _renderStatScreen();
+        });
+    });
+
+    // Кнопка подтверждения
+    const confirmBtn = document.getElementById('stat-confirm');
+    const spent = Object.values(_statPending).reduce((a,b) => a+b, 0);
+    confirmBtn.textContent = spent > 0 ? '✅ Применить' : '⏭ Позже';
+    confirmBtn.onclick = () => _applyStats();
+}
+
+function _applyStats() {
+    const p = G.p;
+    const cls = p.cls || 'warrior';
+    const spent = Object.values(_statPending).reduce((a,b) => a+b, 0);
+
+    for (const [key, pts] of Object.entries(_statPending)) {
+        if (pts <= 0) continue;
+        const sg = STAT_GAINS[key];
+        const gain = sg[cls] * pts;
+        if (key === 'hp') {
+            p.maxhp += gain;
+            p.hp = Math.min(p.hp + gain, p.maxhp);
+        } else if (key === 'mp') {
+            p.maxmp += gain;
+            p.mp = Math.min(p.mp + gain, p.maxmp);
+        } else {
+            p[sg.field] = +(p[sg.field] + gain).toFixed(2);
+        }
+    }
+
+    p.statPoints = (p.statPoints || 0) - spent;
+    document.getElementById('stat-screen').classList.remove('open');
+    _updateHudStatBtn();
+    saveGame(true);
+    if (spent > 0) showQNotif('✨ Статы прокачаны!');
+}
+
+function _updateHudStatBtn() {
+    const p = G.p;
+    const btn = document.getElementById('hud-stat-btn');
+    const count = p.statPoints || 0;
+    if (btn) {
+        btn.classList.toggle('visible', count > 0 && gameStarted);
+        const span = btn.querySelector('span');
+        if (span) span.textContent = count;
+    }
+}
+
 function initPauseHandlers() {
     bindTapButton(document.getElementById('pause-btn'), openPause);
     bindTapButton(document.getElementById('pause-continue'), closePause);
@@ -701,6 +805,7 @@ function enterHouse(houseId) {
 }
 
 function exitHouse() {
+    G._villageCache = null; // сбрасываем кэш деревни (на случай изменений)
     const houseId = G.currentHouse;
     const house = VILLAGE_HOUSES.find(h => h.id === houseId);
 
@@ -905,6 +1010,7 @@ function loop(timestamp) {
     // Обновление игрока
     p.update(inp, tm, enemies, items, G.parts, G.floats, G.projs, npcs);
     updateAbilityButtonState();
+    _updateHudStatBtn();
     
     // Обновление врагов
     if(G.depth > 0) {
