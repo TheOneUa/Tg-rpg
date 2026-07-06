@@ -69,6 +69,7 @@ function dropLootFromEnemy(e, floats) {
 
     // 2. Предметы по таблице лута — появляются на полу
     const drops = rollLoot(e.isBoss, G.depth);
+    if (e.isBoss) onBossKilled();
     drops.forEach((itemId, i) => {
         // Раскладываем предметы рядом с позицией врага
         const ox = Math.round(e.x + (i % 2 === 0 ? -1 : 1) * (Math.random() * 0.8));
@@ -482,7 +483,8 @@ const STAT_GAINS = {
     mp:  { warrior: 5,  archer: 8,  mage: 15, icon: '💧', name: 'Мана',      field: 'maxmp' },
     atk: { warrior: 5,  archer: 4,  mage: 4,  icon: '⚔️', name: 'Атака',     field: 'atk'  },
     def: { warrior: 3,  archer: 2,  mage: 1,  icon: '🛡️', name: 'Защита',    field: 'def'  },
-    spd: { warrior: 0.15, archer: 0.25, mage: 0.25, icon: '💨', name: 'Скорость', field: 'spd' },
+    spd:    { warrior: 0.15, archer: 0.25, mage: 0.25, icon: '💨', name: 'Скорость',       field: 'spd'    },
+    atkSpd: { warrior: 0.15, archer: 0.20, mage: 0.15, icon: '⚡', name: 'Скорость атаки', field: '_atkSpdStat' },
 };
 
 let _statPending = {};
@@ -531,7 +533,9 @@ function _renderStatsTab(p, cls) {
     const eq = p.eqBonus || {};
     list.innerHTML = Object.entries(STAT_GAINS).map(([key, sg]) => {
         const gain = sg[cls];
-        const base = key === 'hp' ? p.maxhp : key === 'mp' ? p.maxmp : p[sg.field];
+        const base = key === 'hp' ? p.maxhp : key === 'mp' ? p.maxmp
+            : key === 'atkSpd' ? (p._atkSpdStat || 0)
+            : p[sg.field];
         const eqVal = eq[key] || 0;
         const pending = _statPending[key] || 0;
         const fmt = v => key === 'spd' ? v.toFixed(2) : Math.round(v);
@@ -610,7 +614,7 @@ function _renderEquipTab(p) {
     });
 
     const bonusLines = Object.entries(bonus).filter(([,v]) => v > 0)
-        .map(([k,v]) => STAT_GAINS[k]?.icon + ' +' + (k==='spd' ? v.toFixed(2) : Math.round(v)));
+        .map(([k,v]) => (STAT_GAINS[k]?.icon || '⬆️') + ' +' + (['spd','atkSpd'].includes(k) ? v.toFixed(2) : Math.round(v)));
     document.getElementById('eq-bonus-info').innerHTML = bonusLines.length
         ? 'Бонусы: ' + bonusLines.map(l => `<span>${l}</span>`).join(' ')
         : 'Наденьте предметы для получения бонусов';
@@ -652,11 +656,12 @@ function _renderInvTab(p) {
 function _itemStatStr(def) {
     if (!def) return '';
     const parts = [];
-    if (def.atk) parts.push('⚔️+' + def.atk);
-    if (def.def) parts.push('🛡️+' + def.def);
-    if (def.hp)  parts.push('❤️+' + def.hp);
-    if (def.mp)  parts.push('💧+' + def.mp);
-    if (def.spd) parts.push('💨+' + def.spd);
+    if (def.atk)    parts.push('⚔️+' + def.atk);
+    if (def.def)    parts.push('🛡️+' + def.def);
+    if (def.hp)     parts.push('❤️+' + def.hp);
+    if (def.mp)     parts.push('💧+' + def.mp);
+    if (def.spd)    parts.push('💨+' + def.spd);
+    if (def.atkSpd) parts.push('⚡+' + def.atkSpd);
     return parts.join(' ');
 }
 
@@ -878,6 +883,7 @@ function enterDungeon(depth) {
     G._dungeonCache = makeDungeonCache(G.dungeonGrid);
     
     G.floats.push(new FText(G.p.x, G.p.y - CFG.TILE, '⚔ Глубина ' + G.depth, '#ff8844', 16));
+    onDepthReached(G.depth);
     sound.play('portal');
     tgVibrate('heavy');
     saveGame(true);

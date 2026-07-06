@@ -15,12 +15,16 @@ function getSaveData() {
         lv: p.lv, exp: p.exp, exn: p.exn,
         gold: p.gold, bag: p.bag, statPoints: p.statPoints || 0,
         inventory: p.inventory || [], equipment: p.equipment || { weapon:null, armor:null, ring:null },
+        itemUpgrades: p.itemUpgrades || {}, enchants: p.enchants || {},
+        _enchantCrit: p._enchantCrit || 0, _enchantMpRegen: p._enchantMpRegen || 0,
+        _atkSpdStat: p._atkSpdStat || 0,
         resources: p.resources,
         masterLevels: p.masterLevels,
         depth: G.depth,
         questState: questState,
         activeQuests: activeQuests,
         questGenerationDepth: questGenerationDepth,
+        questProgress: questProgress,
         stats: stats,
         achievements: achievements
     };
@@ -48,12 +52,18 @@ function applySaveData(d) {
     p.exn = d.exn || 100;
     p.gold = d.gold || 0;
     p.statPoints = d.statPoints || 0;
-    p.inventory  = d.inventory  || [];
-    p.equipment  = d.equipment  || { weapon: null, armor: null, ring: null };
+    p.inventory     = d.inventory  || [];
+    p.equipment     = d.equipment  || { weapon: null, armor: null, ring: null };
+    p.itemUpgrades  = d.itemUpgrades || {};
+    p.enchants      = d.enchants     || {};
+    p._enchantCrit  = d._enchantCrit || 0;
+    p._enchantMpRegen = d._enchantMpRegen || 0;
+    p._atkSpdStat   = d._atkSpdStat  || 0;
     p.recalcEqBonus();
     p.bag = d.bag || { hpPot:0, mpPot:0, sword:0, shield:0 };
     p.resources = d.resources || { ore: 0, wood: 0, essence: 0 };
-    p.masterLevels = d.masterLevels || { smith: { weapon: 0, armor: 0 }, elf: { weapon: 0, armor: 0 }, witch: { weapon: 0, armor: 0 } };
+    const defML = { atk:0, def:0, maxhp:0, maxmp:0, spd:0, atkSpd:0 };
+    p.masterLevels = d.masterLevels || { smith: {...defML}, elf: {...defML}, witch: {...defML} };
     G.depth = d.depth || 0;
     stats = d.stats || { totalKills:0, totalGold:0, maxDepth:0, bossKills:0, maxLevel:1, itemsCollected:0 };
     achievements = d.achievements || {};
@@ -61,6 +71,7 @@ function applySaveData(d) {
         activeQuests = d.activeQuests;
         questState = d.questState || {};
         questGenerationDepth = d.questGenerationDepth || 0;
+        questProgress = d.questProgress || { kills:{}, bossKillsQ:0, goldEarned:0, maxDepthQ:0 };
     }
     return true;
 }

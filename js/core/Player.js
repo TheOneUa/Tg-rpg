@@ -16,15 +16,17 @@ class Player {
         this.exp = 0;
         this.exn = 100;
         this.gold = 0;
-        this.bag = { hpPot: 0, mpPot: 0 }; // только расходники
+        this.bag = { hpPot: 0, mpPot: 0 };
         this.resources = { ore: 0, wood: 0, essence: 0 };
-        this.masterLevels = { smith: { weapon: 0, armor: 0 }, elf: { weapon: 0, armor: 0 }, witch: { weapon: 0, armor: 0 } };
-        // Инвентарь предметов (массив { type, ... })
+        this.masterLevels = { smith: { atk:0, def:0, maxhp:0, maxmp:0, spd:0, atkSpd:0 }, elf: { atk:0, def:0, maxhp:0, maxmp:0, spd:0, atkSpd:0 }, witch: { atk:0, def:0, maxhp:0, maxmp:0, spd:0, atkSpd:0 } };
         this.inventory = [];
-        // Экипировка (слоты)
         this.equipment = { weapon: null, armor: null, ring: null };
-        // Бонусы от экипировки (пересчитываются при надевании/снятии)
-        this.eqBonus = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0 };
+        this.eqBonus   = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0, atkSpd: 0 };
+        this.itemUpgrades = {}; // { itemId: { atk, def } }
+        this.enchants = {};     // { slotId: enchId }
+        this._enchantCrit   = 0;
+        this._enchantMpRegen = 0;
+        this._atkSpdStat    = 0; // накопленный бонус скорости атаки от статов
         this.acd = 0;
         this.scd = 0;
         this.flash = 0;
@@ -86,8 +88,7 @@ class Player {
         tgVibrate('heavy');
         checkAchievements();
         saveGame(true);
-        // Открываем экран распределения статов
-        openStatScreen();
+        // Не открываем экран — игрок распределит через кнопку 🎒 в HUD
     }
     
     useSlot(slot, floats) {
@@ -118,16 +119,18 @@ class Player {
 
     // Пересчитать бонусы от надетой экипировки
     recalcEqBonus() {
-        const b = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0 };
-        for (const [, itemId] of Object.entries(this.equipment)) {
+        const b = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0, atkSpd: 0 };
+        const upgrades = this.itemUpgrades || {};
+        for (const [slot, itemId] of Object.entries(this.equipment || {})) {
             if (!itemId) continue;
             const def = ITEM_DEFS[itemId];
             if (!def) continue;
-            if (def.atk) b.atk += def.atk;
-            if (def.def) b.def += def.def;
-            if (def.hp)  b.hp  += def.hp;
-            if (def.mp)  b.mp  += def.mp;
-            if (def.spd) b.spd += def.spd;
+            if (def.atk)  b.atk  += def.atk  + (upgrades[itemId]?.atk  || 0);
+            if (def.def)  b.def  += def.def  + (upgrades[itemId]?.def  || 0);
+            if (def.hp)   b.hp   += def.hp;
+            if (def.mp)   b.mp   += def.mp;
+            if (def.spd)  b.spd  += def.spd;
+            if (def.atkSpd) b.atkSpd += def.atkSpd;
         }
         this.eqBonus = b;
     }
@@ -247,6 +250,11 @@ class Player {
     autoAttack(enemies, parts, floats, projs) {
         if (this.acd > 0) return;
 
+        // Эффективный кулдаун атаки с учётом бонуса скорости атаки от экипировки
+        // eqBonus.atkSpd: каждые 0.1 = -5% кулдауна (макс -50%)
+        const atkSpdBonus = Math.min(0.5, ((this.eqBonus?.atkSpd || 0) + (this._atkSpdStat || 0)) * 0.5);
+        const effCD = (base) => Math.max(10, Math.round(base * (1 - atkSpdBonus)));
+
         const volleyActive = this.cls === 'archer' && this.abilityActive > 0;
 
         if (this.atkType === 'melee') {
@@ -255,7 +263,7 @@ class Player {
             if (!target) return;
             const ab = ABILITIES.warrior;
             const rage = this.abilityActive > 0;
-            this.acd = rage ? Math.round(this.atkCD / ab.atkSpeedMult) : this.atkCD;
+            this.acd = rage ? Math.round(effCD(this.atkCD) / ab.atkSpeedMult) : effCD(this.atkCD);
             this.attackAnim = 12;
             const ex = target.x * CFG.TILE + CFG.TILE/2;
             const ey = target.y * CFG.TILE + CFG.TILE/2;
@@ -268,7 +276,7 @@ class Player {
             const target = this._nearestEnemy(enemies, this.atkRange, true);
             if (!target) return;
             const ab = ABILITIES.archer;
-            this.acd = volleyActive ? Math.round(this.atkCD / ab.atkSpeedMult) : this.atkCD;
+            this.acd = volleyActive ? Math.round(effCD(this.atkCD) / ab.atkSpeedMult) : effCD(this.atkCD);
             const ex = target.x * CFG.TILE + CFG.TILE/2;
             const ey = target.y * CFG.TILE + CFG.TILE/2;
             const baseAng = Math.atan2(ey - this.y, ex - this.x);
@@ -304,7 +312,7 @@ class Player {
             const target = this._nearestEnemy(enemies, this.atkRange, true);
             if (!target) return;
             if (this.mp < this.mpCost) return; // нет маны — не стреляет
-            this.acd = this.atkCD;
+            this.acd = effCD(this.atkCD);
             this.mp = Math.max(0, this.mp - this.mpCost);
             const ex = target.x * CFG.TILE + CFG.TILE/2;
             const ey = target.y * CFG.TILE + CFG.TILE/2;
@@ -493,6 +501,7 @@ class Player {
                         const goldAmt = 10 + Math.floor(Math.random() * 20);
                         this.gold += goldAmt;
                         stats.totalGold += goldAmt;
+                        onGoldEarned(goldAmt);
                         floats.push(new FText(ix, iy - 24, '+' + goldAmt + '💰', '#ffd700'));
                     } else if (def && def.slot === 'consumable') {
                         this.bag[it.type] = (this.bag[it.type] || 0) + 1;
