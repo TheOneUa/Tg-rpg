@@ -251,10 +251,12 @@ html, body {
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 10;
-    height: 58px;
+    /* Высота: 58px контента + safe area сверху */
+    height: calc(58px + env(safe-area-inset-top, 0px));
     background: rgba(0,0,0,0.82);
     border-bottom: 1px solid rgba(255,255,255,0.08);
-    padding: 4px 8px;
+    /* Контент начинается после safe area */
+    padding: calc(env(safe-area-inset-top, 0px) + 4px) 8px 4px;
     flex-direction: column;
     gap: 2px;
 }
@@ -305,7 +307,7 @@ html, body {
 #quest-tracker {
     display: none;
     position: fixed;
-    top: 62px;
+    top: calc(62px + env(safe-area-inset-top, 0px));
     right: 8px;
     z-index: 10;
     background: rgba(0,0,0,0.7);
@@ -566,7 +568,7 @@ html, body {
    ============================================================ */
 #qnotif {
     position: fixed;
-    top: 70px;
+    top: calc(70px + env(safe-area-inset-top, 0px));
     left: 50%;
     transform: translateX(-50%);
     z-index: 300;
@@ -1066,7 +1068,7 @@ html, body {
    ============================================================ */
 #pause-btn {
     position: fixed;
-    top: 62px;
+    top: calc(62px + env(safe-area-inset-top, 0px));
     right: 8px;
     z-index: 50;
     width: 34px;
@@ -1441,3 +1443,57 @@ html, body {
 .inv-item-name  { font-size: 9px; color: #aaa; text-align: center; margin-top: 3px; line-height: 1.2; }
 .inv-item-stats { font-size: 9px; color: #4caf50; text-align: center; }
 .inv-empty      { color: #444; font-size: 13px; padding: 20px; text-align: center; }
+
+/* ============================================================
+   IFRAME ОВЕРЛЕЙ АДМИН-ПАНЕЛИ
+   ============================================================ */
+#admin-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    flex-direction: column;
+    background: #0d0d1a;
+}
+#admin-overlay.open { display: flex; }
+
+.admin-overlay-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.8);
+    border-bottom: 1px solid rgba(255,215,0,0.2);
+    flex-shrink: 0;
+    color: #ffd700;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+#admin-overlay-close {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(200,50,50,0.2);
+    color: #f88;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+#admin-overlay-close:active { background: rgba(200,50,50,0.4); }
+
+#admin-frame {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #0d0d1a;
+}
+
+/* ============================================================
+   SAFE AREA — боковые отступы для iPhone/Android с вырезами
+   ============================================================ */
+#hud, #ctrl {
+    padding-left: max(8px, env(safe-area-inset-left, 8px));
+    padding-right: max(8px, env(safe-area-inset-right, 8px));
+}

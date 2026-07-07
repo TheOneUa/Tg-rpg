@@ -149,6 +149,9 @@ function init() {
     });
     bindTapButton(document.getElementById('stat-close'), _closeCharScreen);
     bindTapButton(document.getElementById('hud-stat-btn'), openStatScreen);
+
+    // Кнопка закрытия админ-оверлея
+    bindTapButton(document.getElementById('admin-overlay-close'), _closeAdminPanel);
     
     // Запуск цикла
     requestAnimationFrame(loop);
@@ -331,9 +334,27 @@ function _adminPinKey(n) {
 }
 
 function _openAdminPanel() {
-    // Открываем admin.html в новой вкладке (или в iframe overlay)
-    window.open('admin.html', '_blank');
-    // Возвращаем пользователя в меню
+    // Устанавливаем авторизацию для admin.html ДО загрузки iframe
+    // admin.html проверяет sessionStorage['tg_rpg_admin_auth']
+    sessionStorage.setItem('tg_rpg_admin_auth', '1');
+
+    const overlay = document.getElementById('admin-overlay');
+    const frame   = document.getElementById('admin-frame');
+
+    // Перезагружаем iframe при каждом открытии, чтобы он подхватил сессию
+    frame.src = '';
+    requestAnimationFrame(() => {
+        frame.src = 'admin.html';
+        overlay.classList.add('open');
+        // Закрываем экран меню/пина
+        document.getElementById('admin-pin-screen').classList.remove('open');
+        document.getElementById('menu-screen').classList.remove('open');
+    });
+}
+
+function _closeAdminPanel() {
+    document.getElementById('admin-overlay').classList.remove('open');
+    document.getElementById('admin-frame').src = '';
     document.getElementById('menu-screen').classList.add('open');
 }
 
@@ -842,6 +863,8 @@ function startGame(loaded) {
     document.getElementById('create-screen').classList.remove('open');
     document.getElementById('hud').classList.add('open');
     document.getElementById('ctrl').classList.add('open');
+    // Пересчитываем canvas после показа HUD — теперь getBoundingClientRect вернёт реальную высоту
+    requestAnimationFrame(() => resize());
     updateAbilityButtonIcon();
     
     setInterval(() => {
