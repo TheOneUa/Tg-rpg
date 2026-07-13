@@ -1,20 +1,33 @@
 // ============================================================
-//  ITEM
+//  ITEM (на полу подземелья)
 // ============================================================
 class Item {
-    constructor(x, y, type) {
+    // instance: либо { instanceId, type, level, enchantId } — экипируемый
+    // предмет с уникальным ID, либо просто type-строка для расходников
+    // (hpPot/mpPot/gold — им instanceId не нужен, они не хранятся поштучно)
+    constructor(x, y, instanceOrType) {
         this.x = x;       // тайловые координаты
         this.y = y;
-        this.type = type;
         this.alive = true;
         this.bob = Math.random() * Math.PI * 2;
 
-        const def = ITEM_DEFS[type] || { name: type, icon: '❓', col: '#888', slot: 'consumable' };
+        if (typeof instanceOrType === 'string') {
+            // Расходник — просто по типу
+            this.instance = null;
+            this.type = instanceOrType;
+        } else {
+            // Экипируемый предмет — полный инстанс с уникальным ID
+            this.instance = instanceOrType;
+            this.type = instanceOrType.type;
+        }
+
+        const def = ITEM_DEFS[this.type] || { name: this.type, icon: '❓', col: '#888', slot: 'consumable' };
         this.col    = def.col;
         this.icon   = def.icon;
-        this.name   = def.name;
+        this.name   = this.instance ? getItemDisplayName(this.instance) : def.name;
         this.slot   = def.slot;
         this.rarity = def.rarity || 'common';
+        this.hasAbility = !!(this.instance && this.instance.enchantId);
     }
 
     get def() { return ITEM_DEFS[this.type] || {}; }
@@ -42,6 +55,11 @@ class Item {
             ctx.beginPath();
             ctx.arc(px, py, r * 2.0, 0, Math.PI*2);
             ctx.fill();
+        } else if (this.rarity === 'legendary') {
+            ctx.fillStyle = 'rgba(255,180,30,0.25)';
+            ctx.beginPath();
+            ctx.arc(px, py, r * 2.3, 0, Math.PI*2);
+            ctx.fill();
         }
 
         ctx.fillStyle = this.col;
@@ -57,5 +75,11 @@ class Item {
         ctx.textBaseline = 'middle';
         ctx.fillText(this.icon, px, py + 1*SC);
         ctx.textBaseline = 'alphabetic';
+
+        // Значок наличия боевой абилки (маленькая искра сверху)
+        if (this.hasAbility) {
+            ctx.font = `${9*SC}px sans-serif`;
+            ctx.fillText('✨', px + r * 0.9, py - r * 0.9);
+        }
     }
 }

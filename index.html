@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>TG-RPG v5.3.10</title>
+    <title>TG-RPG v5.6.2</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -378,6 +378,12 @@
 
 <!-- Конфиг -->
 <script src="js/config.js"></script>
+<script src="js/config/TilesConfig.js"></script>
+<script src="js/config/ClassesConfig.js"></script>
+<script src="js/config/ItemsConfig.js"></script>
+<script src="js/config/MastersConfig.js"></script>
+<script src="js/config/EnemiesConfig.js"></script>
+<script src="js/config/NamesConfig.js"></script>
 
 <!-- Telegram -->
 <script src="js/telegram/Haptic.js"></script>
@@ -388,8 +394,26 @@
 <script src="js/core/FText.js"></script>
 <script src="js/core/NPC.js"></script>
 <script src="js/core/Item.js"></script>
+<script src="js/core/ItemInstance.js"></script>
 <script src="js/core/Enemy.js"></script>
-<script src="js/core/Player.js"></script>
+<!-- Player: Player.js (конструктор) обязательно первым — остальные части
+     делают Object.assign(Player.prototype, {...}) и требуют, чтобы класс
+     Player уже существовал. Все части — строго до main.js. -->
+<!-- Combat: чистые формулы, используются в PlayerCombat.js -->
+<script src="js/combat/CritSystem.js"></script>
+<script src="js/combat/DamageFormula.js"></script>
+<script src="js/combat/EnemyDeath.js"></script>
+<script src="js/combat/ItemAbilities.js"></script>
+<script src="js/combat/CombatEngine.js"></script>
+
+<script src="js/core/Player/Player.js"></script>
+<script src="js/core/Player/PlayerStats.js"></script>
+<script src="js/core/Player/PlayerInventory.js"></script>
+<script src="js/core/Player/PlayerEquipment.js"></script>
+<script src="js/core/Player/PlayerMovement.js"></script>
+<script src="js/core/Player/PlayerAnimation.js"></script>
+<script src="js/core/Player/PlayerRender.js"></script>
+<script src="js/core/Player/PlayerCombat.js"></script>
 
 <!-- World -->
 <script src="js/world/Village.js"></script>
@@ -401,19 +425,58 @@
 <script src="js/systems/Achievements.js"></script>
 <script src="js/systems/Quests.js"></script>
 <script src="js/systems/Shop.js"></script>
-<script src="js/systems/Masters.js"></script>
-<script src="js/systems/Save.js"></script>
+
+<!-- Systems: Masters (Masters.js первым — MasterUI должен существовать
+     до того как MasterStats/Upgrade/Enchant сделают Object.assign) -->
+<script src="js/systems/Masters/Masters.js"></script>
+<script src="js/systems/Masters/MasterStats.js"></script>
+<script src="js/systems/Masters/MasterUpgrade.js"></script>
+<script src="js/systems/Masters/MasterEnchant.js"></script>
+
+<!-- Systems: Save -->
+<script src="js/systems/Save/SaveMigrations.js"></script>
+<script src="js/systems/Save/SaveSchema.js"></script>
+<script src="js/systems/Save/Save.js"></script>
 
 <!-- UI -->
 <script src="js/ui/Input.js"></script>
 <script src="js/ui/HUD.js"></script>
 <script src="js/ui/Modal.js"></script>
 
+<!-- UI: CharScreen -->
+<script src="js/ui/CharScreen/CharScreen.js"></script>
+<script src="js/ui/CharScreen/StatsTab.js"></script>
+<script src="js/ui/CharScreen/EquipTab.js"></script>
+<script src="js/ui/CharScreen/InventoryTab.js"></script>
+
 <!-- Utils -->
 <script src="js/utils/SpriteConfig.js"></script>
 <script src="js/utils/SpriteEngine.js"></script>
 <script src="js/utils/Pathfinding.js"></script>
 <script src="js/utils/Canvas.js"></script>
+
+<!-- World: доступ к картам и переходы между сценами -->
+<script src="js/world/MapAccessors.js"></script>
+<script src="js/world/SceneTransitions.js"></script>
+
+<!-- Loot -->
+<script src="js/loot/LootDrop.js"></script>
+
+<!-- UI: виджеты, использующие мир/лут/сохранения -->
+<script src="js/ui/QuickNotif.js"></script>
+<script src="js/ui/AbilityButton.js"></script>
+<script src="js/ui/LevelDialog.js"></script>
+
+<!-- Screens -->
+<script src="js/screens/SplashScreen.js"></script>
+<script src="js/screens/MainMenu.js"></script>
+<script src="js/screens/AdminPinScreen.js"></script>
+<script src="js/screens/CreateScreen.js"></script>
+<script src="js/screens/PauseScreen.js"></script>
+<script src="js/screens/SettingsScreen.js"></script>
+
+<!-- Game Loop -->
+<script src="js/GameLoop.js"></script>
 
 <!-- Main -->
 <script src="js/main.js"></script>

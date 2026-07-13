@@ -68,6 +68,7 @@ function generateDungeon(depth) {
                 maxhp: Math.floor(bt.hp * mult * bmult),
                 hp: Math.floor(bt.hp * mult * bmult),
                 atk: Math.floor(bt.atk * mult * bmult),
+                def: Math.floor((bt.def || 0) * (1 + depth * 0.015)),
                 exp: Math.floor(bt.exp * mult * bmult),
                 spd: 0.7 + Math.random() * 0.2,
                 isBoss: true
@@ -88,6 +89,7 @@ function generateDungeon(depth) {
                 maxhp: Math.floor(type.hp * mult),
                 hp: Math.floor(type.hp * mult),
                 atk: Math.floor(type.atk * mult),
+                def: Math.floor((type.def || 0) * (1 + depth * 0.015)),
                 exp: Math.floor(type.exp * mult),
                 spd: (1 + depth * 0.02) * (0.8 + Math.random() * 0.4),
                 isBoss: false

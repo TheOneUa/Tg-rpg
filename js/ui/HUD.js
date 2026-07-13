@@ -36,13 +36,13 @@ function updateSlotCooldowns(cds) {
 }
 
 function hudUpdate(p) {
-    HUD_ELEMENTS.fhp.style.width = Math.max(0, p.hp/p.maxhp*100) + '%';
-    HUD_ELEMENTS.fmp.style.width = Math.max(0, p.mp/p.maxmp*100) + '%';
+    HUD_ELEMENTS.fhp.style.width = Math.max(0, p.hp/p.effMaxhp*100) + '%';
+    HUD_ELEMENTS.fmp.style.width = Math.max(0, p.mp/p.effMaxmp*100) + '%';
     HUD_ELEMENTS.fxp.style.width = Math.max(0, p.exp/p.exn*100) + '%';
-    HUD_ELEMENTS.thp.textContent = p.hp + '/' + p.maxhp;
-    HUD_ELEMENTS.tmp.textContent = p.mp + '/' + p.maxmp;
+    HUD_ELEMENTS.thp.textContent = p.hp + '/' + p.effMaxhp;
+    HUD_ELEMENTS.tmp.textContent = p.mp + '/' + p.effMaxmp;
     HUD_ELEMENTS.slv.textContent = 'Ур.' + p.lv;
-    HUD_ELEMENTS.sat.textContent = '⚔' + p.atk + ' 🛡' + p.def;
+    HUD_ELEMENTS.sat.textContent = '⚔' + p.effAtk + ' 🛡' + p.effDef;
     HUD_ELEMENTS.sgold.textContent = '💰' + p.gold;
     let locText = '📍 Деревня';
     if (G.location === 'dungeon') locText = '⚔ Подземелье';

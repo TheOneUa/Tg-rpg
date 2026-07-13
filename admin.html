@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TG-RPG Admin</title>
 <script src="js/config.js"></script>
+<script src="js/config/TilesConfig.js"></script>
+<script src="js/config/ClassesConfig.js"></script>
+<script src="js/config/ItemsConfig.js"></script>
+<script src="js/config/MastersConfig.js"></script>
+<script src="js/config/EnemiesConfig.js"></script>
+<script src="js/config/NamesConfig.js"></script>
 <script src="js/utils/SpriteConfig.js"></script>
+<script src="js/utils/SpriteEngine.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #0d0d1a; color: #ddd; min-height: 100vh; }
@@ -330,27 +337,27 @@ function buildNamesTab() {
         <div class="section-title">${sec.label}</div>
         ${sec.fields.map(f => {
             const cur = (editNames[sec.key] || {})[f.id] || {};
-            return \`<div class="anim-card" style="padding:12px 16px">
+            return `<div class="anim-card" style="padding:12px 16px">
                 <div style="font-size:12px;color:#888;margin-bottom:8px">${f.label}</div>
                 <div class="anim-row">
                     <div class="field-group" style="max-width:56px">
                         <span>Иконка</span>
-                        <input type="text" value="\${cur.icon||''}" placeholder="⚔️"
-                            data-ns="\${sec.key}" data-nid="\${f.id}" data-nf="icon" style="max-width:56px;font-size:18px;text-align:center">
+                        <input type="text" value="${cur.icon||''}" placeholder="⚔️"
+                            data-ns="${sec.key}" data-nid="${f.id}" data-nf="icon" style="max-width:56px;font-size:18px;text-align:center">
                     </div>
                     <div class="field-group">
                         <span>Название</span>
-                        <input type="text" value="\${cur.name||''}" placeholder="\${f.label}"
-                            data-ns="\${sec.key}" data-nid="\${f.id}" data-nf="name">
+                        <input type="text" value="${cur.name||''}" placeholder="${f.label}"
+                            data-ns="${sec.key}" data-nid="${f.id}" data-nf="name">
                     </div>
-                    \${cur.label !== undefined || (editNames[sec.key]||{})[f.id]?.label !== undefined ? \`
+                    ${cur.label !== undefined || (editNames[sec.key]||{})[f.id]?.label !== undefined ? `
                     <div class="field-group">
                         <span>Подпись (тултип)</span>
-                        <input type="text" value="\${cur.label||''}" placeholder="Магазин"
-                            data-ns="\${sec.key}" data-nid="\${f.id}" data-nf="label">
-                    </div>\` : ''}
+                        <input type="text" value="${cur.label||''}" placeholder="Магазин"
+                            data-ns="${sec.key}" data-nid="${f.id}" data-nf="label">
+                    </div>` : ''}
                 </div>
-            </div>\`;
+            </div>`;
         }).join('')}
     `).join('');
 

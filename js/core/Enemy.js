@@ -9,15 +9,23 @@ class Enemy {
         this.anim = Math.random() * Math.PI * 2;
         this.stunTimer = 0;
         this.isBoss = data.isBoss || false;
+        this.def = data.def || 0; // защита врага (используется в DamageFormula)
     }
     
-    update(px, py, tm) {
+    update(px, py, tm, parts, floats) {
         if (!this.alive) return;
         const dt = G.dt || 1;
         if (this.stunTimer > 0) { this.stunTimer -= dt; return; }
 
+        // Яд/заморозка — тикают даже если враг не может двигаться
+        if (parts && floats) updateEnemyStatusEffects(this, dt, parts, floats);
+        if (!this.alive) return; // яд мог убить в этом кадре
+
         this.anim += 0.1 * dt;
         if (this.acd > 0) this.acd -= dt;
+
+        // Заморожен — не двигается, но остальная логика (анимация/кулдаун) продолжается
+        if (this.frozenTimer > 0) return;
 
         const ex = this.x * CFG.TILE + CFG.TILE/2;
         const ey = this.y * CFG.TILE + CFG.TILE/2;
