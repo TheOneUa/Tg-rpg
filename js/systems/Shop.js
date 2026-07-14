@@ -69,6 +69,10 @@ function openShop() {
     const p = G.p;
     const shopBody  = document.getElementById('shop-body');
     const shopGold  = document.getElementById('shop-gold');
+    if (!shopBody || !shopGold) {
+        console.error('[Shop] Не найдены #shop-body/#shop-gold — проверьте, что index.html обновлён (возможно, закэширована старая версия страницы).');
+        return;
+    }
     let shopTab = 'buy';
 
     function render() {
