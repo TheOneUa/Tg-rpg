@@ -87,6 +87,7 @@ html, body {
     justify-content: center;
     max-height: 180px;
     overflow-y: auto;
+    touch-action: pan-y;
     margin: 12px 0;
     padding: 4px;
 }
@@ -164,6 +165,7 @@ html, body {
     gap: 14px;
     padding: 32px;
     overflow-y: auto;
+    touch-action: pan-y;
 }
 #create-screen.open { display: flex; }
 
@@ -507,6 +509,7 @@ html, body {
 }
 #mbody {
     overflow-y: auto;
+    touch-action: pan-y;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -868,6 +871,7 @@ html, body {
 .settings-body {
     flex: 1;
     overflow-y: auto;
+    touch-action: pan-y;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -1214,6 +1218,30 @@ html, body {
 }
 #stat-screen.open { display: flex; }
 
+/* ── Полноэкранный экран торговца (те же классы .stat-*, что и у
+   экрана персонажа — для визуальной консистентности) ── */
+#shop-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 650;
+    background: rgba(0,0,0,0.92);
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 16px 16px;
+    overflow: hidden;
+}
+#shop-screen.open { display: flex; }
+.shop-gold {
+    width: 100%;
+    max-width: 340px;
+    font-size: 13px;
+    color: #ffd700;
+    font-weight: 700;
+    margin: 2px 0 10px;
+}
+
 .stat-title {
     font-size: 20px;
     font-weight: 900;
@@ -1370,6 +1398,7 @@ html, body {
     height: calc(100vh - 160px);
     overflow-y: auto;
     overflow-x: hidden;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 16px;
 }

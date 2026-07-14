@@ -209,9 +209,13 @@ Object.assign(Player.prototype, {
         if (G.depth > 0 && enemies.length > 0) {
             this.autoAttack(enemies, parts, floats, projs);
         }
-        // Регенерация маны для мага
-        if (this.cls === 'mage' && this.mp < this.effMaxmp) {
-            this.mp = Math.min(this.effMaxmp, this.mp + 0.05 * dt);
+        // Регенерация маны: база — только у мага, плюс бонус от зачарования
+        // "Мистическое" (_enchantMpRegen), которое раньше нигде не читалось.
+        const baseMpRegen = (this.cls === 'mage') ? 0.05 : 0;
+        const enchantMpRegen = this._enchantMpRegen || 0;
+        const totalMpRegen = baseMpRegen + enchantMpRegen;
+        if (totalMpRegen > 0 && this.mp < this.effMaxmp) {
+            this.mp = Math.min(this.effMaxmp, this.mp + totalMpRegen * dt);
         }
         // Кнопка способности (вторая кнопка, бывшая "магия")
         if (inp.atk) { inp.atk = false; }   // зарезервировано (автоатака уже идёт сама)

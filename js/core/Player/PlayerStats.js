@@ -30,6 +30,9 @@ Object.assign(Player.prototype, {
         this.statPoints = (this.statPoints || 0) + 3;
         this.blockChance = Math.min(0.3, 0.1 + this.lv * 0.008);
         this.dodgeChance = Math.min(0.15, 0.05 + this.lv * 0.004);
+        // Полный хил при повышении уровня
+        this.hp = this.effMaxhp;
+        this.mp = this.effMaxmp;
         floats.push(new FText(this.x, this.y - CFG.TILE, '✨ Уровень ' + this.lv + '!', '#ffd700', 20));
         floats.push(new FText(this.x, this.y - CFG.TILE * 2, '+3 очка статов', '#88ffcc', 15));
         sound.play('levelup');

@@ -39,8 +39,8 @@ function hudUpdate(p) {
     HUD_ELEMENTS.fhp.style.width = Math.max(0, p.hp/p.effMaxhp*100) + '%';
     HUD_ELEMENTS.fmp.style.width = Math.max(0, p.mp/p.effMaxmp*100) + '%';
     HUD_ELEMENTS.fxp.style.width = Math.max(0, p.exp/p.exn*100) + '%';
-    HUD_ELEMENTS.thp.textContent = p.hp + '/' + p.effMaxhp;
-    HUD_ELEMENTS.tmp.textContent = p.mp + '/' + p.effMaxmp;
+    HUD_ELEMENTS.thp.textContent = Math.ceil(p.hp) + '/' + p.effMaxhp;
+    HUD_ELEMENTS.tmp.textContent = Math.ceil(p.mp) + '/' + p.effMaxmp;
     HUD_ELEMENTS.slv.textContent = 'Ур.' + p.lv;
     HUD_ELEMENTS.sat.textContent = '⚔' + p.effAtk + ' 🛡' + p.effDef;
     HUD_ELEMENTS.sgold.textContent = '💰' + p.gold;
