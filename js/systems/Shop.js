@@ -128,7 +128,11 @@ function openShop() {
         });
 
         shopBody.innerHTML = sellItems.length === 0
-            ? '<div style="color:#555;padding:20px;text-align:center">Нечего продавать</div>'
+            ? `<div style="color:#999;padding:40px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
+                <div style="font-size:40px">🎒</div>
+                <div style="font-size:15px;font-weight:700;color:#ccc">Нечего продавать</div>
+                <div style="font-size:12px;color:#777">В инвентаре, сумке и хранилище ресурсов пусто.<br>Подберите предметы в подземелье или откройте вкладку «Купить».</div>
+              </div>`
             : sellItems.map((si, i) => {
                 const def = ITEM_DEFS[si.id] || RESOURCES[si.id] || { name: si.id, icon: '❓' };
                 const qty = si.qty ? ' ×' + si.qty : '';
