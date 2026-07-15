@@ -1225,7 +1225,7 @@ html, body {
     position: fixed;
     inset: 0;
     z-index: 650;
-    background: rgba(0,0,0,0.92);
+    background: #0a0a12;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
@@ -1240,6 +1240,19 @@ html, body {
     color: #ffd700;
     font-weight: 700;
     margin: 2px 0 10px;
+}
+.shop-body {
+    width: 100%;
+    max-width: 340px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .stat-title {
