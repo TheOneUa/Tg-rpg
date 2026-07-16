@@ -21,6 +21,12 @@ Object.assign(Player.prototype, {
         const flashing = this.flash > 0;
 
         // ── Попытка нарисовать спрайт ──
+        // Файлы warrior.png/archer.png/mage.png physически удалены из
+        // assets/sprites/ (были глюки в анимации) — drawCharSprite()
+        // получит 404, img.onerror выставит failed=true, entry.loaded
+        // останется false, и ниже сработает уже существующий векторный
+        // fallback — без всякого специального кода здесь. Когда будет
+        // готова правильная анимация — просто вернуть файлы на место.
         const usedSprite = drawCharSprite(
             spriteKey,
             this.spriteAnim,

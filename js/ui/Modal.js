@@ -18,7 +18,7 @@ modal.addEventListener('touchstart', e => {
 
 // Открытие достижений
 document.getElementById('s-ach').addEventListener('click', openAchievements);
-document.getElementById('s-quests').addEventListener('click', openQuests);
+document.getElementById('s-quests').addEventListener('click', () => openQuests(false));
 
 function openAchievements() {
     mtitle.textContent = '🏆 Достижения';

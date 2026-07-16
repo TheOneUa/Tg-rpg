@@ -34,7 +34,7 @@ class NPC {
     
     talk() {
         if (this.type === 0) openShop();
-        else if (this.type === 1) openQuests();
+        else if (this.type === 1) openQuests(true);
         else if (this.type === 'smith') openMasterShop('smith');
         else if (this.type === 'elf') openMasterShop('elf');
         else if (this.type === 'witch') openMasterShop('witch');

@@ -139,10 +139,11 @@ function _checkQuestCompletion() {
 }
 
 // Открыть список квестов (вызывается у Старейшины)
-function openQuests() {
-    const isAtElder = true; // вызывается только через NPC.talk() Старейшины
+function openQuests(fromElder = false) {
     mtitle.textContent = '📜 Задания Старейшины';
-    msub.textContent = 'Выполняй задания и получай награды';
+    msub.textContent = fromElder
+        ? 'Выполняй задания и получай награды'
+        : 'Просмотр — сдать награду можно только у Старейшины в деревне';
 
     // Сортировка: сначала выполненные (можно сдать), потом в процессе, потом сданные
     const sorted = [...activeQuests].sort((a, b) => {
@@ -176,7 +177,9 @@ function openQuests() {
                 <div class="mdesc" style="color:#ffd700;font-size:10px">${rewardStr}</div>
             </div>
             ${done && !claimed
-                ? `<button class="mbuy" data-qid="${q.id}">Сдать</button>`
+                ? (fromElder
+                    ? `<button class="mbuy" data-qid="${q.id}">Сдать</button>`
+                    : `<span style="font-size:10px;color:#e6a23c;text-align:right;line-height:1.3">Сдай<br>Старейшине</span>`)
                 : claimed
                 ? `<span style="font-size:20px">✅</span>`
                 : ''
@@ -184,29 +187,33 @@ function openQuests() {
         </div>`;
     }).join('') || '<div style="color:#555;padding:20px;text-align:center">Квестов пока нет</div>';
 
-    // Обработчики кнопок "Сдать"
-    mbody.querySelectorAll('[data-qid]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const q = activeQuests.find(x => x.id === btn.dataset.qid);
-            if (!q || questState[q.id]?.claimed || !isQuestDone(q)) return;
-            const p = G.p;
-            const r = q.reward;
-            // Выдаём награду
-            p.gold += r.gold;
-            p.exp  += r.exp;
-            if (r.item) p.bag[r.item] = (p.bag[r.item] || 0) + 1;
-            questState[q.id].claimed = true;
-            // Проверяем левелап
-            while (p.exp >= p.exn) {
-                p.exp -= p.exn;
-                p.lvup(G.floats);
-            }
-            showQNotif('🎁 Награда: ' + r.gold + '💰 ' + r.exp + 'XP');
-            sound.play('levelup');
-            saveGame(true);
-            openQuests(); // обновить список
+    // Обработчики кнопок "Сдать" — существуют только когда fromElder=true
+    // (см. рендер выше), поэтому дополнительная проверка тут не нужна,
+    // но оставляем guard на fromElder явно — на случай будущих правок.
+    if (fromElder) {
+        mbody.querySelectorAll('[data-qid]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const q = activeQuests.find(x => x.id === btn.dataset.qid);
+                if (!q || questState[q.id]?.claimed || !isQuestDone(q)) return;
+                const p = G.p;
+                const r = q.reward;
+                // Выдаём награду
+                p.gold += r.gold;
+                p.exp  += r.exp;
+                if (r.item) p.bag[r.item] = (p.bag[r.item] || 0) + 1;
+                questState[q.id].claimed = true;
+                // Проверяем левелап
+                while (p.exp >= p.exn) {
+                    p.exp -= p.exn;
+                    p.lvup(G.floats);
+                }
+                showQNotif('🎁 Награда: ' + r.gold + '💰 ' + r.exp + 'XP');
+                sound.play('levelup');
+                saveGame(true);
+                openQuests(true); // обновить список (остаёмся в режиме Старейшины)
+            });
         });
-    });
+    }
 
     modal.classList.add('open');
 }
