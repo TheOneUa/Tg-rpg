@@ -826,7 +826,16 @@ html, body {
     padding: 12px 20px;
 }
 
-.menu-version { font-size: 11px; color: #333; margin-top: 8px; }
+.menu-version {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.28);
+    letter-spacing: 0.5px;
+}
 
 /* ============================================================
    КНОПКА НАСТРОЕК В МЕНЮ
