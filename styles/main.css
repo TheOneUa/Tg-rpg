@@ -760,8 +760,8 @@ html, body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    padding: 40px 32px;
+    gap: 12px;
+    padding: 28px 32px calc(40px + env(safe-area-inset-bottom, 0px));
 }
 #menu-screen.open { display: flex; }
 
@@ -792,22 +792,22 @@ html, body {
 .menu-btn {
     width: 100%;
     max-width: 300px;
-    padding: 16px 24px;
+    padding: 12px 20px;
     border: none;
     border-radius: 14px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     transition: transform .12s, opacity .12s;
     -webkit-tap-highlight-color: transparent;
 }
 .menu-btn:active { transform: scale(0.96); opacity: 0.85; }
-.menu-btn .btn-icon { font-size: 22px; flex-shrink: 0; }
+.menu-btn .btn-icon { font-size: 19px; flex-shrink: 0; }
 .menu-btn .btn-text { flex: 1; text-align: left; }
-.menu-btn .btn-sub { font-size: 11px; font-weight: 400; opacity: 0.7; display: block; margin-top: 2px; }
+.menu-btn .btn-sub { font-size: 10px; font-weight: 400; opacity: 0.7; display: block; margin-top: 1px; }
 
 .menu-btn-primary {
     background: linear-gradient(135deg, #ffd700, #ff8800);
