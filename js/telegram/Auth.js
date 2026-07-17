@@ -41,12 +41,30 @@ function initTelegram() {
 // contentSafeAreaInset — зона, перекрытая ЭЛЕМЕНТАМИ САМОГО TELEGRAM
 // (шапка fullscreen-режима). safeAreaInset — вырез/статусбар устройства.
 // Оба могут отсутствовать в старых клиентах — тогда просто 0.
+//
+// FALLBACK: contentSafeAreaInset — сравнительно новый API (Bot API 8.0+).
+// На практике подтвердилось, что часть клиентов либо не отдаёт его,
+// либо отдаёт 0 — тогда шапка Telegram (Закрыть/свернуть/меню) реально
+// перекрывает HUD, а наш расчёт думает, что перекрытия нет. Поэтому
+// пока игра в fullscreen-режиме (а мы его всегда запрашиваем — см.
+// tg.requestFullscreen() выше), гарантируем МИНИМУМ 40px отступа
+// независимо от того, что вернул API — а если API вернёт значение
+// больше (другое устройство/клиент с более высокой шапкой) — используем
+// его. isFullscreen считаем true и тогда, когда сам флаг недоступен
+// в данной версии клиента (мы всё равно запрашивали fullscreen).
 function _applyTelegramSafeArea(tg) {
     try {
         const content = tg.contentSafeAreaInset || {};
         const device   = tg.safeAreaInset || {};
         const root = document.documentElement.style;
-        root.setProperty('--tg-content-safe-top',    (content.top    ?? 0) + 'px');
+        const FALLBACK_FULLSCREEN_TOP = 40; // px, см. комментарий выше
+
+        const isFs = tg.isFullscreen !== false;
+        const contentTop = isFs
+            ? Math.max(content.top ?? 0, FALLBACK_FULLSCREEN_TOP)
+            : (content.top ?? 0);
+
+        root.setProperty('--tg-content-safe-top',    contentTop + 'px');
         root.setProperty('--tg-content-safe-bottom', (content.bottom ?? 0) + 'px');
         root.setProperty('--tg-safe-top',    (device.top    ?? 0) + 'px');
         root.setProperty('--tg-safe-bottom', (device.bottom ?? 0) + 'px');
