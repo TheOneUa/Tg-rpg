@@ -42,7 +42,10 @@ function dropLootFromEnemy(e, floats) {
         const isEquippable = def.slot === 'weapon' || def.slot === 'armor' || def.slot === 'ring';
         let payload = itemId;
         if (isEquippable) {
-            const instance = createItemInstance(itemId);
+            // Шанс сразу выпасть улучшенным ("+N") — растёт с глубиной,
+            // выше у боссов, см. rollDropEnhanceLevel в ItemsConfig.js
+            const level = rollDropEnhanceLevel(G.depth, e.isBoss);
+            const instance = createItemInstance(itemId, level);
             // Шанс зачарования боевой абилкой — растёт с глубиной, выше у боссов
             if (Math.random() < rollItemEnchantChance(G.depth, e.isBoss)) {
                 instance.enchantId = rollRandomItemEnchant();
@@ -63,7 +66,8 @@ function dropLootFromEnemy(e, floats) {
         }
 
         const enchantTag = isEquippable && payload.enchantId ? ' ' + ITEM_ENCHANTS[payload.enchantId].icon : '';
-        floats.push(new FText(ex, ey - CFG.TILE * 1.6 - i*16, def.icon + ' ' + def.name + enchantTag, '#ffd700', 12));
+        const levelTag = isEquippable && payload.level > 0 ? ' +' + payload.level : '';
+        floats.push(new FText(ex, ey - CFG.TILE * 1.6 - i*16, def.icon + ' ' + def.name + levelTag + enchantTag, levelTag ? '#33e0ff' : '#ffd700', 12));
     });
 }
 

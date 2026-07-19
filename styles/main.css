@@ -19,6 +19,15 @@ html, body {
     --tg-content-safe-bottom: 0px;
     --tg-safe-top: 0px;
     --tg-safe-bottom: 0px;
+    /* Гарантированный минимум отступа под шапку Telegram fullscreen
+       (Закрыть/свернуть/меню) — применяется ТОЛЬКО внутри Telegram
+       (класс .in-telegram ставится синхронно в Auth.js при обнаружении
+       Telegram.WebApp, без зависимости от таймингов асинхронных API).
+       Вне Telegram остаётся 0px — на обычный браузер не влияет. */
+    --tg-fullscreen-floor: 0px;
+}
+html.in-telegram {
+    --tg-fullscreen-floor: 90px;
 }
 
 /* ============================================================
@@ -263,11 +272,11 @@ html, body {
     /* Высота: 58px контента + вырез устройства + шапка Telegram fullscreen
        (env — стандартный вырез, --tg-content-safe-top — поверх неё
        накладывает Telegram в режиме requestFullscreen(), см. Auth.js) */
-    height: calc(58px + env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px));
+    height: calc(58px + max(env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px), var(--tg-fullscreen-floor, 0px)));
     background: rgba(0,0,0,0.82);
     border-bottom: 1px solid rgba(255,255,255,0.08);
     /* Контент начинается после обоих отступов */
-    padding: calc(env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px) + 4px) 8px 4px;
+    padding: calc(max(env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px), var(--tg-fullscreen-floor, 0px)) + 4px) 8px 4px;
     flex-direction: column;
     gap: 2px;
 }
@@ -318,7 +327,7 @@ html, body {
 #quest-tracker {
     display: none;
     position: fixed;
-    top: calc(62px + env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px));
+    top: calc(62px + max(env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px), var(--tg-fullscreen-floor, 0px)));
     right: 8px;
     z-index: 10;
     background: rgba(0,0,0,0.7);
@@ -354,6 +363,7 @@ html, body {
     justify-content: center;
     gap: 8px;
     padding: 8px 12px 4px;
+    margin-bottom: 6px; /* приподнимаем строку зелий над джойстиком/кнопками */
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -376,6 +386,12 @@ html, body {
 .qsl-icon { font-size: 20px; line-height: 1; }
 .qsl-val { font-size: 10px; color: #ffd700; font-weight: 700; }
 .qsl-label { font-size: 8px; color: #555; }
+
+/* Кнопки-экраны (Вещи/Квесты/Статы) — тот же размер, что у зелий,
+   отличаются рамкой, чтобы не путать с расходуемыми предметами */
+.qsl-screen { border-color: rgba(120,170,255,0.25); }
+.qsl-screen:active { border-color: #78aaff; background: rgba(120,170,255,0.1); }
+.qsl-screen .qsl-label { color: #78aaff; }
 .qsl-cooldown {
     position: absolute;
     inset: 0;
@@ -395,21 +411,43 @@ html, body {
 #ctrl-bottom {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end; /* было space-between — #joy больше не в потоке (см. ниже) */
     padding: 8px 20px 12px;
     gap: 12px;
 }
 
+/* Плавающий джойстик — не в потоке документа, появляется там, где
+   коснулись пальцем внутри #joy-zone (см. Input.js). transform
+   центрирует круг ровно на точке касания. */
 #joy {
+    position: fixed;
     width: 96px;
     height: 96px;
     background: rgba(255,255,255,0.06);
     border: 2px solid rgba(255,255,255,0.14);
     border-radius: 50%;
-    position: relative;
+    transform: translate(-50%, -50%);
     touch-action: none;
-    flex-shrink: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .12s;
+    z-index: 60;
 }
+#joy.active { opacity: 1; }
+
+/* Невидимая зона касания для спавна джойстика — нижняя левая часть
+   экрана. Правая не занята нарочно — там кнопки атаки/контекста,
+   джойстик там спавниться не должен, чтобы не мешать нажатиям. */
+#joy-zone {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 50%;
+    height: 120px;
+    z-index: 55;
+    touch-action: none;
+}
+
 #knob {
     position: absolute;
     top: 50%; left: 50%;
@@ -580,7 +618,7 @@ html, body {
    ============================================================ */
 #qnotif {
     position: fixed;
-    top: calc(70px + env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px));
+    top: calc(70px + max(env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px), var(--tg-fullscreen-floor, 0px)));
     left: 50%;
     transform: translateX(-50%);
     z-index: 300;
@@ -1090,7 +1128,7 @@ html, body {
    ============================================================ */
 #pause-btn {
     position: fixed;
-    top: calc(62px + env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px));
+    top: calc(62px + max(env(safe-area-inset-top, 0px) + var(--tg-content-safe-top, 0px), var(--tg-fullscreen-floor, 0px)));
     right: 8px;
     z-index: 50;
     width: 34px;

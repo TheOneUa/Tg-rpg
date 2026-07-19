@@ -38,6 +38,56 @@ const QUEST_TEMPLATES = [
     { type:'gold', need:3000, reward:{ gold:1200,exp:1000,item:'mpPot' }, name:'Золотой магнат',        minDepth:1 },
 ];
 
+// ============================================================
+//  ПРОЦЕДУРНЫЕ КВЕСТЫ — глубина 20+ (там кончается ручной контент)
+// ============================================================
+// Работает БЕЗ верхнего предела: глубина 150, 300, 1000 — всё это
+// просто получит свою порцию квестов по той же формуле, новый шаг
+// руками дописывать не нужно. Рост следует тому же стилю, что и
+// остальные бесконечные формулы в игре (статы у мастера, дроп) —
+// геометрическая прогрессия, без Math.min-потолка.
+const PROCEDURAL_QUEST_START = 20; // где заканчивается ручной контент
+const PROCEDURAL_QUEST_STEP  = 10; // новый набор квестов каждые 10 этажей
+
+function generateProceduralQuestBracket(bracketDepth) {
+    const tier = Math.round((bracketDepth - PROCEDURAL_QUEST_START) / PROCEDURAL_QUEST_STEP); // 1,2,3...
+    const scale = Math.pow(1.35, tier);
+    const g = n => Math.round(n * scale / 10) * 10; // золото/опыт — округляем до десятков
+    return [
+        {
+            type: 'kill', target: 'Любой', need: Math.round(80 + tier * 30),
+            reward: { gold: g(1200), exp: g(960), item: tier % 2 ? 'hpPot' : 'mpPot' },
+            name: `Бездна: волна ${tier}`, minDepth: bracketDepth
+        },
+        {
+            type: 'boss', target: 'любой', need: 10 + tier * 3,
+            reward: { gold: g(3000), exp: g(2400), item: tier % 2 ? 'mpPot' : 'hpPot' },
+            name: `Бездна: охотник ${tier}`, minDepth: bracketDepth
+        },
+        {
+            type: 'depth', need: bracketDepth,
+            reward: { gold: g(2000), exp: g(1600), item: 'hpPot' },
+            name: `Бездна: этаж ${bracketDepth}`, minDepth: bracketDepth
+        },
+        {
+            type: 'gold', need: Math.round(3000 * scale),
+            reward: { gold: g(1200), exp: g(1000), item: 'mpPot' },
+            name: `Бездна: золотая жила ${tier}`, minDepth: bracketDepth
+        }
+    ];
+}
+
+// Собрать все процедурные шаблоны вплоть до указанной глубины.
+// Генерируется на лету (не хранится в массиве) — можно звать для любой
+// глубины, хоть 1000, отработает мгновенно, шаблонов на выходе немного.
+function getProceduralQuestTemplates(depth) {
+    const templates = [];
+    for (let b = PROCEDURAL_QUEST_START + PROCEDURAL_QUEST_STEP; b <= depth + 2; b += PROCEDURAL_QUEST_STEP) {
+        templates.push(...generateProceduralQuestBracket(b));
+    }
+    return templates;
+}
+
 // Прогресс по типам (накапливается глобально)
 let questProgress = {
     kills: {},    // { 'Гоблин': 5, 'Любой': 12, ... }
@@ -47,8 +97,10 @@ let questProgress = {
 };
 
 function initQuests(depth) {
+    // Ручные шаблоны (глубина 1-20) + процедурные (20+, без предела)
+    const allTemplates = QUEST_TEMPLATES.concat(getProceduralQuestTemplates(depth));
     // Добавляем квесты нового уровня глубины (не заменяем старые)
-    const newQuests = QUEST_TEMPLATES.filter(t => {
+    const newQuests = allTemplates.filter(t => {
         const minOk = t.minDepth <= depth + 2;
         const alreadyHas = activeQuests.some(q => q.name === t.name);
         return minOk && !alreadyHas;

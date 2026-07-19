@@ -73,3 +73,21 @@ function hudUpdate(p) {
         tgVibrate('light');
     });
 });
+
+// Кнопки-экраны рядом с зельями — тот же размер, открывают конкретную
+// вкладку CharScreen/квесты. Вещи/Статы — CharScreen с нужной вкладкой
+// сразу (см. openStatScreen(tab) в CharScreen.js). Квесты — HUD-кнопка,
+// т.е. только просмотр, сдать награду можно лишь у Старейшины
+// (см. openQuests(fromElder) в Quests.js).
+bindTapButton(document.getElementById('qb-inv'), () => {
+    openStatScreen('inv');
+    tgVibrate('light');
+});
+bindTapButton(document.getElementById('qb-quests'), () => {
+    openQuests(false);
+    tgVibrate('light');
+});
+bindTapButton(document.getElementById('qb-stats'), () => {
+    openStatScreen('stats');
+    tgVibrate('light');
+});

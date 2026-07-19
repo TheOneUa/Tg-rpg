@@ -12,6 +12,10 @@ function getTelegramUser() {
 function initTelegram() {
     if (window.Telegram?.WebApp) {
         const tg = Telegram.WebApp;
+        // Синхронно, сразу — не зависит от асинхронных tg.expand()/
+        // requestFullscreen(). Включает CSS-минимум --tg-fullscreen-floor
+        // (см. main.css) для верхнего отступа под шапку Telegram.
+        document.documentElement.classList.add('in-telegram');
         tg.ready();
         tg.expand();
         // Полноэкранный режим — поверх статусбара (API 8.0+)
@@ -31,6 +35,14 @@ function initTelegram() {
         tg.onEvent?.('safeAreaChanged', () => _applyTelegramSafeArea(tg));
         tg.onEvent?.('contentSafeAreaChanged', () => _applyTelegramSafeArea(tg));
         tg.onEvent?.('fullscreenChanged', () => _applyTelegramSafeArea(tg));
+        // requestFullscreen() выше — асинхронный, значения могут подъехать
+        // не сразу. События должны поймать момент, но на некоторых клиентах
+        // они не всегда срабатывают надёжно — подстраховываемся ещё одним
+        // вызовом чуть погодя. Не критично для самого фикса (см. main.css —
+        // там есть жёсткий CSS-минимум max(...) на случай, если и это не
+        // поможет), но если API всё же вернёт значение больше минимума —
+        // подхватим более точное.
+        setTimeout(() => _applyTelegramSafeArea(tg), 300);
         tgApplyTheme();
         return getTelegramUser();
     }
@@ -42,29 +54,20 @@ function initTelegram() {
 // (шапка fullscreen-режима). safeAreaInset — вырез/статусбар устройства.
 // Оба могут отсутствовать в старых клиентах — тогда просто 0.
 //
-// FALLBACK: contentSafeAreaInset — сравнительно новый API (Bot API 8.0+).
-// На практике подтвердилось, что часть клиентов либо не отдаёт его,
-// либо отдаёт 0 — тогда шапка Telegram (Закрыть/свернуть/меню) реально
-// перекрывает HUD, а наш расчёт думает, что перекрытия нет. Поэтому
-// пока игра в fullscreen-режиме (а мы его всегда запрашиваем — см.
-// tg.requestFullscreen() выше), гарантируем МИНИМУМ 40px отступа
-// независимо от того, что вернул API — а если API вернёт значение
-// больше (другое устройство/клиент с более высокой шапкой) — используем
-// его. isFullscreen считаем true и тогда, когда сам флаг недоступен
-// в данной версии клиента (мы всё равно запрашивали fullscreen).
+// FALLBACK-минимум для случая, когда contentSafeAreaInset недоступен/
+// нулевой, ТЕПЕРЬ живёт в CSS (main.css, через max(...)) — не здесь.
+// Причина: _applyTelegramSafeArea() вызывается синхронно сразу после
+// tg.requestFullscreen(), а сам переход в fullscreen асинхронный —
+// tg.isFullscreen в этот момент мог ещё читаться как false, и любая
+// проверка на нём здесь ненадёжна по таймингу. CSS max() не зависит
+// от того, когда именно подъехало значение — работает всегда.
 function _applyTelegramSafeArea(tg) {
     try {
         const content = tg.contentSafeAreaInset || {};
         const device   = tg.safeAreaInset || {};
         const root = document.documentElement.style;
-        const FALLBACK_FULLSCREEN_TOP = 40; // px, см. комментарий выше
 
-        const isFs = tg.isFullscreen !== false;
-        const contentTop = isFs
-            ? Math.max(content.top ?? 0, FALLBACK_FULLSCREEN_TOP)
-            : (content.top ?? 0);
-
-        root.setProperty('--tg-content-safe-top',    contentTop + 'px');
+        root.setProperty('--tg-content-safe-top',    (content.top    ?? 0) + 'px');
         root.setProperty('--tg-content-safe-bottom', (content.bottom ?? 0) + 'px');
         root.setProperty('--tg-safe-top',    (device.top    ?? 0) + 'px');
         root.setProperty('--tg-safe-bottom', (device.bottom ?? 0) + 'px');

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>TG-RPG v5.6.2</title>
-    <link rel="stylesheet" href="styles/main.css?v=5.6.2g">
+    <link rel="stylesheet" href="styles/main.css?v=5.6.3">
 </head>
 <body>
 
@@ -326,7 +326,13 @@
     <div id="quickbar">
         <div class="qsl" id="qs0"><div class="qsl-icon">🧪</div><div class="qsl-val" id="qv0">0</div><div class="qsl-label">HP</div><div class="qsl-cooldown" id="cd0"></div></div>
         <div class="qsl" id="qs1"><div class="qsl-icon">💧</div><div class="qsl-val" id="qv1">0</div><div class="qsl-label">MP</div><div class="qsl-cooldown" id="cd1"></div></div>
+        <div class="qsl qsl-screen" id="qb-inv"><div class="qsl-icon">🎒</div><div class="qsl-label">Вещи</div></div>
+        <div class="qsl qsl-screen" id="qb-quests"><div class="qsl-icon">📋</div><div class="qsl-label">Квесты</div></div>
+        <div class="qsl qsl-screen" id="qb-stats"><div class="qsl-icon">📊</div><div class="qsl-label">Статы</div></div>
     </div>
+    <!-- Невидимая зона касания для плавающего джойстика — левая часть
+         нижней панели управления (правая занята кнопками атаки) -->
+    <div id="joy-zone"></div>
     <!-- Джойстик + кнопки -->
     <div id="ctrl-bottom">
         <div id="joy"><div id="knob"></div></div>
@@ -377,109 +383,109 @@
 <!-- ============================================================ -->
 
 <!-- Конфиг -->
-<script src="js/config.js?v=5.6.2g"></script>
-<script src="js/config/TilesConfig.js?v=5.6.2g"></script>
-<script src="js/config/ClassesConfig.js?v=5.6.2g"></script>
-<script src="js/config/ItemsConfig.js?v=5.6.2g"></script>
-<script src="js/config/MastersConfig.js?v=5.6.2g"></script>
-<script src="js/config/EnemiesConfig.js?v=5.6.2g"></script>
-<script src="js/config/NamesConfig.js?v=5.6.2g"></script>
+<script src="js/config.js?v=5.6.3"></script>
+<script src="js/config/TilesConfig.js?v=5.6.3"></script>
+<script src="js/config/ClassesConfig.js?v=5.6.3"></script>
+<script src="js/config/ItemsConfig.js?v=5.6.3"></script>
+<script src="js/config/MastersConfig.js?v=5.6.3"></script>
+<script src="js/config/EnemiesConfig.js?v=5.6.3"></script>
+<script src="js/config/NamesConfig.js?v=5.6.3"></script>
 
 <!-- Telegram -->
-<script src="js/telegram/Haptic.js?v=5.6.2g"></script>
-<script src="js/telegram/Auth.js?v=5.6.2g"></script>
+<script src="js/telegram/Haptic.js?v=5.6.3"></script>
+<script src="js/telegram/Auth.js?v=5.6.3"></script>
 
 <!-- Core -->
-<script src="js/core/Particle.js?v=5.6.2g"></script>
-<script src="js/core/FText.js?v=5.6.2g"></script>
-<script src="js/core/NPC.js?v=5.6.2g"></script>
-<script src="js/core/Item.js?v=5.6.2g"></script>
-<script src="js/core/ItemInstance.js?v=5.6.2g"></script>
-<script src="js/core/Enemy.js?v=5.6.2g"></script>
+<script src="js/core/Particle.js?v=5.6.3"></script>
+<script src="js/core/FText.js?v=5.6.3"></script>
+<script src="js/core/NPC.js?v=5.6.3"></script>
+<script src="js/core/Item.js?v=5.6.3"></script>
+<script src="js/core/ItemInstance.js?v=5.6.3"></script>
+<script src="js/core/Enemy.js?v=5.6.3"></script>
 <!-- Player: Player.js (конструктор) обязательно первым — остальные части
      делают Object.assign(Player.prototype, {...}) и требуют, чтобы класс
      Player уже существовал. Все части — строго до main.js. -->
 <!-- Combat: чистые формулы, используются в PlayerCombat.js -->
-<script src="js/combat/CritSystem.js?v=5.6.2g"></script>
-<script src="js/combat/DamageFormula.js?v=5.6.2g"></script>
-<script src="js/combat/EnemyDeath.js?v=5.6.2g"></script>
-<script src="js/combat/ItemAbilities.js?v=5.6.2g"></script>
-<script src="js/combat/CombatEngine.js?v=5.6.2g"></script>
+<script src="js/combat/CritSystem.js?v=5.6.3"></script>
+<script src="js/combat/DamageFormula.js?v=5.6.3"></script>
+<script src="js/combat/EnemyDeath.js?v=5.6.3"></script>
+<script src="js/combat/ItemAbilities.js?v=5.6.3"></script>
+<script src="js/combat/CombatEngine.js?v=5.6.3"></script>
 
-<script src="js/core/Player/Player.js?v=5.6.2g"></script>
-<script src="js/core/Player/PlayerStats.js?v=5.6.2g"></script>
-<script src="js/core/Player/PlayerInventory.js?v=5.6.2g"></script>
-<script src="js/core/Player/PlayerEquipment.js?v=5.6.2g"></script>
-<script src="js/core/Player/PlayerMovement.js?v=5.6.2g"></script>
-<script src="js/core/Player/PlayerAnimation.js?v=5.6.2g"></script>
-<script src="js/core/Player/PlayerRender.js?v=5.6.2g"></script>
-<script src="js/core/Player/PlayerCombat.js?v=5.6.2g"></script>
+<script src="js/core/Player/Player.js?v=5.6.3"></script>
+<script src="js/core/Player/PlayerStats.js?v=5.6.3"></script>
+<script src="js/core/Player/PlayerInventory.js?v=5.6.3"></script>
+<script src="js/core/Player/PlayerEquipment.js?v=5.6.3"></script>
+<script src="js/core/Player/PlayerMovement.js?v=5.6.3"></script>
+<script src="js/core/Player/PlayerAnimation.js?v=5.6.3"></script>
+<script src="js/core/Player/PlayerRender.js?v=5.6.3"></script>
+<script src="js/core/Player/PlayerCombat.js?v=5.6.3"></script>
 
 <!-- World -->
-<script src="js/world/Village.js?v=5.6.2g"></script>
-<script src="js/world/House.js?v=5.6.2g"></script>
-<script src="js/world/Dungeon.js?v=5.6.2g"></script>
-<script src="js/world/Portal.js?v=5.6.2g"></script>
+<script src="js/world/Village.js?v=5.6.3"></script>
+<script src="js/world/House.js?v=5.6.3"></script>
+<script src="js/world/Dungeon.js?v=5.6.3"></script>
+<script src="js/world/Portal.js?v=5.6.3"></script>
 
 <!-- Systems -->
-<script src="js/systems/Achievements.js?v=5.6.2g"></script>
-<script src="js/systems/Quests.js?v=5.6.2g"></script>
-<script src="js/systems/Shop.js?v=5.6.2g"></script>
+<script src="js/systems/Achievements.js?v=5.6.3"></script>
+<script src="js/systems/Quests.js?v=5.6.3"></script>
+<script src="js/systems/Shop.js?v=5.6.3"></script>
 
 <!-- Systems: Masters (Masters.js первым — MasterUI должен существовать
      до того как MasterStats/Upgrade/Enchant сделают Object.assign) -->
-<script src="js/systems/Masters/Masters.js?v=5.6.2g"></script>
-<script src="js/systems/Masters/MasterStats.js?v=5.6.2g"></script>
-<script src="js/systems/Masters/MasterUpgrade.js?v=5.6.2g"></script>
-<script src="js/systems/Masters/MasterEnchant.js?v=5.6.2g"></script>
+<script src="js/systems/Masters/Masters.js?v=5.6.3"></script>
+<script src="js/systems/Masters/MasterStats.js?v=5.6.3"></script>
+<script src="js/systems/Masters/MasterUpgrade.js?v=5.6.3"></script>
+<script src="js/systems/Masters/MasterEnchant.js?v=5.6.3"></script>
 
 <!-- Systems: Save -->
-<script src="js/systems/Save/SaveMigrations.js?v=5.6.2g"></script>
-<script src="js/systems/Save/SaveSchema.js?v=5.6.2g"></script>
-<script src="js/systems/Save/Save.js?v=5.6.2g"></script>
+<script src="js/systems/Save/SaveMigrations.js?v=5.6.3"></script>
+<script src="js/systems/Save/SaveSchema.js?v=5.6.3"></script>
+<script src="js/systems/Save/Save.js?v=5.6.3"></script>
 
 <!-- UI -->
-<script src="js/ui/Input.js?v=5.6.2g"></script>
-<script src="js/ui/HUD.js?v=5.6.2g"></script>
-<script src="js/ui/Modal.js?v=5.6.2g"></script>
+<script src="js/ui/Input.js?v=5.6.3"></script>
+<script src="js/ui/HUD.js?v=5.6.3"></script>
+<script src="js/ui/Modal.js?v=5.6.3"></script>
 
 <!-- UI: CharScreen -->
-<script src="js/ui/CharScreen/CharScreen.js?v=5.6.2g"></script>
-<script src="js/ui/CharScreen/StatsTab.js?v=5.6.2g"></script>
-<script src="js/ui/CharScreen/EquipTab.js?v=5.6.2g"></script>
-<script src="js/ui/CharScreen/InventoryTab.js?v=5.6.2g"></script>
+<script src="js/ui/CharScreen/CharScreen.js?v=5.6.3"></script>
+<script src="js/ui/CharScreen/StatsTab.js?v=5.6.3"></script>
+<script src="js/ui/CharScreen/EquipTab.js?v=5.6.3"></script>
+<script src="js/ui/CharScreen/InventoryTab.js?v=5.6.3"></script>
 
 <!-- Utils -->
-<script src="js/utils/SpriteConfig.js?v=5.6.2g"></script>
-<script src="js/utils/SpriteEngine.js?v=5.6.2g"></script>
-<script src="js/utils/Pathfinding.js?v=5.6.2g"></script>
-<script src="js/utils/Canvas.js?v=5.6.2g"></script>
+<script src="js/utils/SpriteConfig.js?v=5.6.3"></script>
+<script src="js/utils/SpriteEngine.js?v=5.6.3"></script>
+<script src="js/utils/Pathfinding.js?v=5.6.3"></script>
+<script src="js/utils/Canvas.js?v=5.6.3"></script>
 
 <!-- World: доступ к картам и переходы между сценами -->
-<script src="js/world/MapAccessors.js?v=5.6.2g"></script>
-<script src="js/world/SceneTransitions.js?v=5.6.2g"></script>
+<script src="js/world/MapAccessors.js?v=5.6.3"></script>
+<script src="js/world/SceneTransitions.js?v=5.6.3"></script>
 
 <!-- Loot -->
-<script src="js/loot/LootDrop.js?v=5.6.2g"></script>
+<script src="js/loot/LootDrop.js?v=5.6.3"></script>
 
 <!-- UI: виджеты, использующие мир/лут/сохранения -->
-<script src="js/ui/QuickNotif.js?v=5.6.2g"></script>
-<script src="js/ui/AbilityButton.js?v=5.6.2g"></script>
-<script src="js/ui/LevelDialog.js?v=5.6.2g"></script>
+<script src="js/ui/QuickNotif.js?v=5.6.3"></script>
+<script src="js/ui/AbilityButton.js?v=5.6.3"></script>
+<script src="js/ui/LevelDialog.js?v=5.6.3"></script>
 
 <!-- Screens -->
-<script src="js/screens/SplashScreen.js?v=5.6.2g"></script>
-<script src="js/screens/MainMenu.js?v=5.6.2g"></script>
-<script src="js/screens/AdminPinScreen.js?v=5.6.2g"></script>
-<script src="js/screens/CreateScreen.js?v=5.6.2g"></script>
-<script src="js/screens/PauseScreen.js?v=5.6.2g"></script>
-<script src="js/screens/SettingsScreen.js?v=5.6.2g"></script>
+<script src="js/screens/SplashScreen.js?v=5.6.3"></script>
+<script src="js/screens/MainMenu.js?v=5.6.3"></script>
+<script src="js/screens/AdminPinScreen.js?v=5.6.3"></script>
+<script src="js/screens/CreateScreen.js?v=5.6.3"></script>
+<script src="js/screens/PauseScreen.js?v=5.6.3"></script>
+<script src="js/screens/SettingsScreen.js?v=5.6.3"></script>
 
 <!-- Game Loop -->
-<script src="js/GameLoop.js?v=5.6.2g"></script>
+<script src="js/GameLoop.js?v=5.6.3"></script>
 
 <!-- Main -->
-<script src="js/main.js?v=5.6.2g"></script>
+<script src="js/main.js?v=5.6.3"></script>
 
 </body>
 </html>

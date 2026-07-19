@@ -29,24 +29,32 @@ function kbUpdate() {
 }
 
 // ============================================================
-//  JOYSTICK
+//  JOYSTICK (плавающий — появляется там, где коснулись пальцем)
 // ============================================================
+// #joy-zone — невидимая зона касания в нижней левой части экрана.
+// #joy — сам круг джойстика, position:fixed, центрируется на точке
+// касания через left/top + CSS transform:translate(-50%,-50%).
+const joyZoneEl = document.getElementById('joy-zone');
 const joyEl = document.getElementById('joy');
 const knobEl = document.getElementById('knob');
 let joyActive = false, joyId = null, joyOx = 0, joyOy = 0;
 const JOY_MAX = 50, JOY_DEAD = 5;
 
-joyEl.addEventListener('touchstart', e => {
+joyZoneEl.addEventListener('touchstart', e => {
     e.preventDefault();
+    if (joyActive) return; // палец джойстика уже есть — второй палец не перехватываем
     const t = e.changedTouches[0];
     joyId = t.identifier;
     joyActive = true;
-    const r = joyEl.getBoundingClientRect();
-    joyOx = r.left + r.width/2;
-    joyOy = r.top + r.height/2;
+    joyOx = t.clientX;
+    joyOy = t.clientY;
+    joyEl.style.left = joyOx + 'px';
+    joyEl.style.top = joyOy + 'px';
+    joyEl.classList.add('active');
+    knobEl.style.transform = 'translate(-50%,-50%)';
 }, { passive:false });
 
-joyEl.addEventListener('touchmove', e => {
+joyZoneEl.addEventListener('touchmove', e => {
     e.preventDefault();
     for(const t of e.changedTouches) {
         if(t.identifier !== joyId) continue;
@@ -75,12 +83,13 @@ function joyEnd(e) {
             joyId = null;
             inp.dx = 0;
             inp.dy = 0;
+            joyEl.classList.remove('active');
             knobEl.style.transform = 'translate(-50%,-50%)';
         }
     }
 }
-joyEl.addEventListener('touchend', joyEnd);
-joyEl.addEventListener('touchcancel', joyEnd);
+joyZoneEl.addEventListener('touchend', joyEnd);
+joyZoneEl.addEventListener('touchcancel', joyEnd);
 
 // ============================================================
 //  BUTTONS

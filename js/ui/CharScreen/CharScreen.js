@@ -13,9 +13,9 @@
 let _statPending = {};
 let _activeCharTab = 'stats';
 
-function openStatScreen() {
+function openStatScreen(tab = null) {
     _statPending = { hp: 0, mp: 0, atk: 0, def: 0, spd: 0 };
-    _activeCharTab = G.p.statPoints > 0 ? 'stats' : 'equip';
+    _activeCharTab = tab || (G.p.statPoints > 0 ? 'stats' : 'equip');
     _renderCharScreen();
     document.getElementById('stat-screen').classList.add('open');
 }

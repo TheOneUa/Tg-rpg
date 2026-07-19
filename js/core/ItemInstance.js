@@ -25,12 +25,15 @@ function restoreItemInstanceCounter(savedValue) {
     _nextItemInstanceId = Math.max(_nextItemInstanceId, savedValue || 1);
 }
 
-// Создать новый экземпляр предмета (используется при дропе/покупке)
-function createItemInstance(type) {
+// Создать новый экземпляр предмета (используется при дропе/покупке).
+// level — опциональный стартовый уровень улучшения (для дропа "+N",
+// см. rollDropEnhanceLevel в ItemsConfig.js). По умолчанию 0 — как
+// раньше, покупка в магазине и т.п. не передают этот параметр.
+function createItemInstance(type, level = 0) {
     return {
         instanceId: nextItemInstanceId(),
         type: type,
-        level: 0,        // уровень улучшения у мастера (+0, +1, +2...)
+        level: level,    // уровень улучшения у мастера (+0, +1, +2...)
         enchantId: null  // ключ зачарования (null = нет)
     };
 }
